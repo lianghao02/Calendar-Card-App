@@ -1,0 +1,112 @@
+
+/* --- Split View & Mobile Optimization (Added) --- */
+
+@media (max-width: 640px) {
+    /* Enforce 7 columns for month view on mobile */
+    .view-month {
+        grid-template-columns: repeat(7, 1fr) !important;
+    }
+
+    /* Day Card Adjustments for Grid */
+    .view-month .day-card {
+        min-height: 50px !important;
+        padding: 0.25rem !important;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    /* Hide standard event list in grid */
+    .view-month .events-container,
+    .view-month .add-event-btn,
+    .view-month .day-header-top .share-day-btn { 
+        display: none !important;
+    }
+    
+    .view-month .day-header {
+        margin-bottom: 0;
+        border-bottom: none;
+        padding-bottom: 0;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .view-month .day-date {
+        font-size: 0.85rem;
+        margin-top: 0;
+    }
+    
+    /* Holiday Label Compact */
+    .view-month .holiday-label {
+        font-size: 0.6rem;
+        padding: 0 0.1rem;
+        margin-top: 0;
+        line-height: 1;
+    }
+}
+
+/* Event Dots (Desktop: hidden, Mobile: shown in grid) */
+.event-dots {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .view-month .event-dots {
+        display: flex !important;
+        gap: 2px;
+        margin-top: 2px;
+        justify-content: center;
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .view-month .event-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+    }
+    
+    .view-month .event-dot.more {
+        background-color: var(--text-secondary);
+        opacity: 0.5;
+    }
+}
+
+/* Selected Day Highlight */
+.day-card.selected-day {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3) !important;
+    background-color: #eef2ff !important;
+}
+
+/* Selected Day Events List (Bottom Container) */
+.selected-day-events {
+    margin-top: 1rem;
+    background: var(--card-surface);
+    border-radius: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    display: none;
+}
+
+.selected-day-events.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.selected-day-events h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

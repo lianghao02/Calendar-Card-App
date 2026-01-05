@@ -179,9 +179,21 @@ function renderCalendar() {
     if (currentView === 'week') {
         calendarGrid.className = 'calendar-container view-week';
         renderWeekView();
+        // Hide split view container in week mode
+        const splitContainer = document.getElementById('selected-day-events');
+        if (splitContainer) splitContainer.style.display = 'none';
+        
     } else {
         calendarGrid.className = 'calendar-container view-month';
         renderMonthView();
+        
+        // Mobile Split View Initialization
+        if (window.innerWidth <= 640) {
+            if (!activeSplitDate) {
+                activeSplitDate = formatDateKey(currentDate);
+            }
+            renderSelectedDayEvents(activeSplitDate);
+        }
     }
 }
 
@@ -285,6 +297,12 @@ function createDayCard(date, isOtherMonth) {
         `;
     }).join('');
 
+    // Generate Event Dots
+    const dotsHtml = `<div class="event-dots">
+        ${dayEvents.slice(0, 5).map(evt => `<div class="event-dot"></div>`).join('')}
+        ${dayEvents.length > 5 ? `<div class="event-dot more"></div>` : ''}
+    </div>`;
+
     dayCard.innerHTML = `
         <div class="day-header">
             <div class="day-header-top">
@@ -293,6 +311,7 @@ function createDayCard(date, isOtherMonth) {
             </div>
             <div class="day-date">${date.getDate()}</div>
             ${holidayLabel}
+            ${dotsHtml} <!-- Add Dots Here -->
         </div>
         <div class="events-container">
             ${eventsHtml}
@@ -302,6 +321,12 @@ function createDayCard(date, isOtherMonth) {
     
     // Click Handling
     dayCard.onclick = (e) => {
+        // Handle Mobile Split View Selection
+        if (window.innerWidth <= 640 && currentView === 'month' && !isSelectionMode) {
+             selectDay(dateKey);
+             return;
+        }
+
         // If selection mode, toggle selection
         if (isSelectionMode) {
             if (selectedDates.has(dateKey)) {
@@ -320,8 +345,72 @@ function createDayCard(date, isOtherMonth) {
             }
         };
     }
+    
+    // Auto-select active date for split view if matches
+    if (activeSplitDate === dateKey && window.innerWidth <= 640 && currentView === 'month') {
+        dayCard.classList.add('selected-day');
+    }
 
     calendarGrid.appendChild(dayCard);
+}
+
+// Mobile Split View Logic
+let activeSplitDate = null; // Store currently selected date for split view
+
+function selectDay(dateKey) {
+    activeSplitDate = dateKey;
+    
+    // 1. Highlight in Grid
+    document.querySelectorAll('.day-card').forEach(card => card.classList.remove('selected-day'));
+    // Find the card (inefficient but simple for now, or re-render)
+    // Re-render is safest to apply class, but maybe heavy. 
+    // Let's try to just update class if possible, or re-render. Re-render is robust.
+    renderCalendar();
+
+    // 2. Render Bottom List
+    renderSelectedDayEvents(dateKey);
+}
+
+function renderSelectedDayEvents(dateKey) {
+    const container = document.getElementById('selected-day-events');
+    const dayEvents = events[dateKey] || [];
+    
+    if (!container) return;
+    
+    // Format Date Header
+    const dateObj = new Date(dateKey);
+    const m = dateObj.getMonth() + 1;
+    const d = dateObj.getDate();
+    const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+    const w = dayNames[dateObj.getDay()];
+    
+    let html = `<h3>${m}/${d} (${w}) 行程</h3>`;
+    
+    if (dayEvents.length === 0) {
+        html += `<p style="color: var(--text-secondary); padding: 0.5rem;">無行程</p>`;
+    } else {
+        html += dayEvents.map((evt, index) => {
+             const timeDisplay = evt.time === '全日' ? '全日' : (evt.time || '');
+             const linkBtn = evt.link ? `<a href="${evt.link}" target="_blank" style="margin-left:8px; text-decoration:none;">🔗</a>` : '';
+             
+             return `
+             <div class="event-item" onclick="editEvent('${dateKey}', ${index})">
+                 <div class="event-time">${timeDisplay}</div>
+                 <div class="event-title">
+                    ${evt.title} ${linkBtn}
+                    ${evt.location ? `<div style="font-size:0.8em; color:gray;">📍 ${evt.location}</div>` : ''}
+                    ${evt.description ? `<div style="font-size:0.8em; color:gray; white-space:pre-wrap;">📝 ${evt.description}</div>` : ''}
+                 </div>
+             </div>
+             `;
+        }).join('');
+    }
+    
+    // Add "Add Event" button at bottom
+    html += `<button class="add-event-btn" onclick="openAddModal('${dateKey}')" style="margin-top:1rem;">+ 新增此日行程</button>`;
+    
+    container.innerHTML = html;
+    container.classList.add('active');
 }
 
 // Global functions for HTML access
