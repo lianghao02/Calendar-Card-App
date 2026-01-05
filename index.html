@@ -31,7 +31,8 @@
         </div>
         
         <div class="smart-input-container">
-            <input type="text" id="smart-input" class="smart-input" placeholder="💡 智慧輸入：試試「明天 10:00 開會」或「下週五 交報告」..." autocomplete="off">
+            <textarea id="smart-input" class="smart-input" rows="1" placeholder="💡 智慧輸入：貼上多行內容..."></textarea>
+            <button id="smart-submit-btn" class="btn-send" title="送出解析">➤</button>
         </div>
     </header>
 
@@ -48,11 +49,23 @@
             </div>
             <div class="modal-body">
                 <div class="input-group">
-                    <label class="input-label">時間與內容 (格式範例：10:00 開會)</label>
-                    <textarea class="input-field" id="event-input" rows="3" placeholder="輸入事項..."></textarea>
+                    <label class="input-label">活動標題 (Title)</label>
+                    <input type="text" class="input-field" id="event-input" placeholder="輸入標題 (例如：週二夜來香)...">
+                </div>
+                 <div class="input-group">
+                    <label class="input-label">時間 (Time)</label>
+                    <input type="text" class="input-field" id="event-time" placeholder="例如：10:00, 20:00 或留空">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">相關連結 (選填)</label>
+                    <label class="input-label">地點 (Location)</label>
+                    <input type="text" class="input-field" id="event-location" placeholder="輸入地點...">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">附註 (Note)</label>
+                    <textarea class="input-field" id="event-description" rows="3" placeholder="詳細內容、備註..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">相關連結 (Link)</label>
                     <input type="text" class="input-field" id="event-link" placeholder="https://...">
                 </div>
                 <input type="hidden" id="selected-date">

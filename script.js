@@ -49,16 +49,20 @@ let isSelectionMode = false;
 let selectedDates = new Set(); // Stores dateKey strings
 
 // DOM 元素
+// DOM 元素
 const calendarGrid = document.getElementById('calendar-grid');
 const currentMonthYear = document.getElementById('current-month-year');
 const modalOverlay = document.getElementById('event-modal');
-const eventInput = document.getElementById('event-input');
-const eventLinkInput = document.getElementById('event-link'); // New
+const eventInput = document.getElementById('event-input'); // Now Title
+const eventTimeInput = document.getElementById('event-time'); // New Time
+const eventLocationInput = document.getElementById('event-location'); // New Location
+const eventDescriptionInput = document.getElementById('event-description'); // New Note
+const eventLinkInput = document.getElementById('event-link'); 
 const selectedDateInput = document.getElementById('selected-date');
 const modalTitle = document.getElementById('modal-title');
 const saveBtn = document.getElementById('save-btn');
 const smartInput = document.getElementById('smart-input');
-const selectModeBtn = document.getElementById('select-mode-btn'); // New
+const selectModeBtn = document.getElementById('select-mode-btn');
 
 // View Toggles
 const viewWeekBtn = document.getElementById('view-week');
@@ -90,7 +94,6 @@ function setupEventListeners() {
     });
     
     // Share
-    // Share
     document.getElementById('share-btn').addEventListener('click', () => {
         if (isSelectionMode && selectedDates.size > 0) {
             shareSelectedDates();
@@ -107,10 +110,19 @@ function setupEventListeners() {
     viewMonthBtn.addEventListener('click', () => switchView('month'));
 
     // Smart Input
-    smartInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+    // 1. Submit Button Click
+    const smartSubmitBtn = document.getElementById('smart-submit-btn');
+    if (smartSubmitBtn) {
+        smartSubmitBtn.addEventListener('click', () => {
             handleSmartInput(smartInput.value);
-            smartInput.value = '';
+        });
+    }
+
+    // 2. Keyboard: Enter = Newline (default), Ctrl+Enter = Submit
+    smartInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault(); 
+            handleSmartInput(smartInput.value);
         }
     });
 
@@ -211,11 +223,6 @@ function renderMonthView() {
     // 生成月曆格子
     let iterDate = new Date(startDate);
     
-    // 增加週標題 (Optional, 但月檢視如果沒有標題會很怪，這裡因為原本卡片有標題，所以我們用 CSS 隱藏卡片內的標題，可以考慮在 Grid 上方加一排 Headers)
-    // 簡單起見，我們在每張卡片內保持 Day Name，但 CSS 已經 hide 掉了。
-    // 更好的做法是：如果 iterDate 是第一行，顯示星期幾？
-    // 暫時維持原狀，依賴 CSS 樣式。
-
     while (iterDate <= endDate) {
         const isOtherMonth = iterDate.getMonth() !== month;
         createDayCard(iterDate, isOtherMonth);
@@ -263,15 +270,6 @@ function createDayCard(date, isOtherMonth) {
         const titleHtml = `<span class="event-title">${evt.title}${linkIcon}</span>`;
             
         let onClickAction = '';
-        if (evt.link && !isSelectionMode) {
-            // Priority: Click event to edit, but maybe link icon to open?
-            // User requirement: "Can also select multi dates to share". 
-            // Let's make the whole item clickable to edit, but show link in text.
-            // Actually, if it has a link, maybe we want to visit it easily?
-            // "Share message including link". 
-            // Let's keep click = edit. Link visiting can be done via proper copy or separate button.
-            // Or maybe small icon click = open link.
-        }
         
         // Find index
         const realIndex = events[dateKey].indexOf(evt);
@@ -313,8 +311,6 @@ function createDayCard(date, isOtherMonth) {
             }
             renderCalendar(); // Re-render to update style
         } 
-        // Normal mode: Month view double click -> add
-        // else do nothing (handled by buttons)
     };
 
     if (currentView === 'month' && !isSelectionMode) {
@@ -330,10 +326,8 @@ function createDayCard(date, isOtherMonth) {
 
 // Global functions for HTML access
 window.shareSpecificDay = function(dateKey) {
-    // 呼叫 shareSchedule 但指定單日範圍
     const targetDate = new Date(dateKey);
     shareSchedule(targetDate, targetDate);
-    // 阻止事件冒泡 (如果按鈕在 header 內)
     event && event.stopPropagation();
 }
 
@@ -376,40 +370,108 @@ function handleSmartInput(text) {
     const { date, cleanText } = parseResult;
     const dateKey = formatDateKey(date);
 
-    // 2. 解析時間 (Reuse logic)
-    // 簡單解析：嘗試尋找 "http" 作為連結? 
-    // 目前先只處理標題，連結建議在 Modal 內輸入完整
+    // 2. 解析內容 (嘗試拆解 Time, Title, Link, Location, Note)
+    const lines = cleanText.split('\n');
+    let title = '';
+    let link = '';
+    let description = '';
+    let time = '';
+    let location = '';
+
+    // Strategy: Process the first line for Metadata (Time, Location)
+    // Then everything else goes to description/link
     
-    const timeMatch = cleanText.match(/(\d{1,2}:\d{2})\s*(.*)/);
-    let newEvent = {};
+    let firstLine = lines[0] || '';
+
+    // --- Parse Link from First Line ---
+    // Extract URL to prevent it from remaining in the Title
+    const urlMatch = firstLine.match(/https?:\/\/[^\s]+/);
+    if (urlMatch) {
+        link = urlMatch[0];
+        firstLine = firstLine.replace(urlMatch[0], '').trim();
+    }
     
+    // --- Parse Time ---
+    // Patterns: "10:00", "10點", "下午2點", "晚上8點30"
+    // Regex: (\d{1,2})[:：點](\d{1,2})?
+    const timeMatch = firstLine.match(/(\d{1,2})[:：點](\d{1,2})?/);
     if (timeMatch) {
-         let title = timeMatch[2];
-         newEvent = {
-            time: timeMatch[1],
-            title: title.trim() || '未命名行程',
-            link: ''
-        };
+         let h = parseInt(timeMatch[1]);
+         let m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+         
+         // Basic cleanup for Time string
+         // Ensure 2 digits
+         const hStr = String(h).padStart(2, '0');
+         const mStr = String(m).padStart(2, '0');
+         time = `${hStr}:${mStr}`;
+         
+         // Remove time from title (firstLine)
+         // We remove the match string
+         firstLine = firstLine.replace(timeMatch[0], '').trim();
+         
+         // Remove optional "分" or "半" if immediately following? 
+         // Advanced: "10點半" -> "10:30"
+         // Current: simple check. User said "10點".
     } else {
-        newEvent = {
-            time: '全日',
-            title: cleanText.trim(),
-            link: ''
-        };
+        // Handle "10點半" specific case?
+        if (firstLine.includes('點半')) {
+             const halfMatch = firstLine.match(/(\d{1,2})點半/);
+             if (halfMatch) {
+                 let h = parseInt(halfMatch[1]);
+                 time = `${String(h).padStart(2, '0')}:30`;
+                 firstLine = firstLine.replace(halfMatch[0], '').trim();
+             }
+        }
     }
 
-    // 3. 存入 Local
-    if (!events[dateKey]) events[dateKey] = [];
-    events[dateKey].push(newEvent);
-    events[dateKey].sort((a, b) => {
-        if (a.time === '全日') return -1;
-        if (b.time === '全日') return 1;
-        return (a.time || '').localeCompare(b.time || '');
-    });
+    // --- Parse Location ---
+    // Pattern: "在[地點]"
+    // Ends with space, comma, newline, or end of string
+    const locMatch = firstLine.match(/在(.+?)(?=[，,。 ]|$)/);
+    if (locMatch) {
+        location = locMatch[1];
+        // Remove location pattern from title
+        // Re-construct the match string to remove it?
+        // Note: locMatch[0] is everything including "在"
+        firstLine = firstLine.replace(locMatch[0], '').trim();
+    }
+
+    // Cleanup Title punctuation at start/end (commas left over from removal)
+    firstLine = firstLine.replace(/^[，,]+|[，,]+$/g, '').trim();
+
+    title = firstLine;
+
+    // Process remaining lines for Link and Description
+    let descLines = [];
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.match(/^https?:\/\//)) {
+            // Only overwrite if link strictly empty? Or maybe prioritize line-based link?
+            // User requirement: "If found in smart field (implicit first line title context), cut to link".
+            // If we already found one in Title, maybe keep it? Or overwrite? 
+            // Let's assume if Title had it, that's the one. If not, check body.
+            if (!link) link = line; 
+            else descLines.push(line); // If we already have a link, treat this as desc? OR just ignore. Treating as desc seems safer.
+        } else {
+            descLines.push(line);
+        }
+    }
+    description = descLines.join('\n');
+
+    // 3. Confirm via Modal (不直接儲存，而是開啟 Modal 讓使用者確認)
+    currentDate = new Date(date); // Move view to that date
+    renderCalendar(); // Update view
     
-    localStorage.setItem('calendar_events', JSON.stringify(events));
-    currentDate = new Date(date);
-    renderCalendar();
+    // Open Modal with pre-filled data
+    openAddModal(dateKey, {
+        title: title,
+        time: time,
+        location: location,
+        description: description,
+        link: link
+    });
+
+    smartInput.value = ''; // Clear input after successful parse
 }
 
 function parseDateKeyword(text) {
@@ -418,49 +480,56 @@ function parseDateKeyword(text) {
     let extractedText = text;
     let found = false;
 
-    // 關鍵字：明天、後天
-    if (text.startsWith('明天')) {
+    // Normalized: replace common variants
+    let normText = text.replace(/周/g, '週').replace(/禮拜/g, '週');
+
+    if (normText.startsWith('明天')) {
         targetDate.setDate(today.getDate() + 1);
-        extractedText = text.replace('明天', '').trim();
+        extractedText = normText.replace('明天', '').trim();
         found = true;
-    } else if (text.startsWith('後天')) {
+    } else if (normText.startsWith('後天')) {
         targetDate.setDate(today.getDate() + 2);
-        extractedText = text.replace('後天', '').trim();
+        extractedText = normText.replace('後天', '').trim();
+        found = true;
+    } else if (normText.startsWith('今晚') || normText.startsWith('今天') || normText.startsWith('今日')) {
+        extractedText = normText.replace(/今[晚天日]/, '').trim();
         found = true;
     } 
-    // 關鍵字：下週X、星期X
+    // 關鍵字：下週X、星期X、週X
     else {
         const weekMap = {'日':0, '一':1, '二':2, '三':3, '四':4, '五':5, '六':6};
-        const weekMatch = text.match(/^(下週|星期)([日一二三四五六])/);
+        
+        // Regex: (下週|週|星期)([日一二三四五六])
+        // Note: We normalized "周" -> "週", "禮拜" -> "週"
+        const weekMatch = normText.match(/^(下週|週|星期)([日一二三四五六])/);
         
         if (weekMatch) {
-            const prefix = weekMatch[1]; // 下週 or 星期
+            const prefix = weekMatch[1]; 
             const dayChar = weekMatch[2];
             const targetDay = weekMap[dayChar];
             const currentDay = today.getDay();
             
             let diff = targetDay - currentDay;
+            
             if (prefix === '下週') {
-                diff += 7;
-            } else if (prefix === '星期') {
-                if (diff <= 0) diff += 7;
+                 diff += 7;
+            } else {
+                // "週二" - Look forward
+                if (diff <= 0) diff += 7; 
             }
             
             targetDate.setDate(today.getDate() + diff);
-            // remove matched string
-            extractedText = text.substring(weekMatch[0].length).trim();
+            extractedText = normText.substring(weekMatch[0].length).trim();
             found = true;
         }
-        // 日期格式：MM/DD, M/D, M\D, M.D (支援 / \ . -)
-        // 必須在字串開頭
         else {
-            const dateMatch = text.match(/^(\d{1,2})[/\-\.\\](\d{1,2})/);
+            const dateMatch = normText.match(/^(\d{1,2})[/\-\.\\](\d{1,2})/);
             if (dateMatch) {
                 const m = parseInt(dateMatch[1]);
                 const d = parseInt(dateMatch[2]);
                 targetDate.setMonth(m - 1, d);
                 
-                extractedText = text.substring(dateMatch[0].length).trim();
+                extractedText = normText.substring(dateMatch[0].length).trim();
                 found = true;
             }
         }
@@ -469,18 +538,42 @@ function parseDateKeyword(text) {
     if (found) {
         return { date: targetDate, cleanText: extractedText };
     }
-    return null;
+    // Default fallback: assume text IS content, date is Today? 
+    // User requirement: "如果是今晚，就是預設本日... 沒有時間，就跳出訊息要使用者填... 不然就是預設全日"
+    // So if no date found, default to Today
+    return { date: today, cleanText: text }; 
 }
 
+
 // Global functions for HTML access
-window.openAddModal = function(dateKey) {
-    if (isSelectionMode) return; // Disable in selection mode
+window.openAddModal = function(dateKey, preFill = null) {
+    if (isSelectionMode) return; 
     selectedDateInput.value = dateKey;
-    eventInput.value = ''; 
-    eventLinkInput.value = ''; // Clear link
-    editingIndex = -1;
-    modalTitle.textContent = `新增行程 (${dateKey})`;
-    saveBtn.textContent = '儲存';
+    
+    if (preFill) {
+        // Smart Input Pre-fill
+        eventInput.value = preFill.title || '';
+        eventTimeInput.value = preFill.time || '';
+        eventLocationInput.value = preFill.location || '';
+        eventDescriptionInput.value = preFill.description || '';
+        eventLinkInput.value = preFill.link || '';
+        modalTitle.textContent = `確認行程 (${dateKey})`; // Change title for confirmation
+        saveBtn.textContent = '確認新增';
+    } else {
+        // Manual Add
+        eventInput.value = ''; 
+        eventTimeInput.value = '';
+        eventLocationInput.value = '';
+        eventDescriptionInput.value = '';
+        eventLinkInput.value = '';
+        editingIndex = -1;
+        modalTitle.textContent = `新增行程 (${dateKey})`;
+        saveBtn.textContent = '儲存';
+    }
+    
+    // Clear editing index if adding new
+    if (preFill || editingIndex === -1) editingIndex = -1;
+
     modalOverlay.classList.add('active');
     setTimeout(() => eventInput.focus(), 100); 
 }
@@ -490,8 +583,13 @@ window.editEvent = function(dateKey, index) {
     const evt = events[dateKey][index];
     if (!evt) return;
     selectedDateInput.value = dateKey;
-    eventInput.value = evt.time ? `${evt.time} ${evt.title}` : evt.title;
-    eventLinkInput.value = evt.link || ''; // Load link
+    
+    eventInput.value = evt.title || '';
+    eventTimeInput.value = evt.time || '';
+    eventLocationInput.value = evt.location || '';
+    eventDescriptionInput.value = evt.description || '';
+    eventLinkInput.value = evt.link || '';
+    
     editingIndex = index;
     modalTitle.textContent = `編輯行程 (${dateKey})`;
     saveBtn.textContent = '更新';
@@ -504,22 +602,34 @@ function closeModal() {
 }
 
 function saveEvent() {
-    const text = eventInput.value.trim();
-    const link = eventLinkInput.value.trim(); // Get Link
+    const title = eventInput.value.trim();
+    const time = eventTimeInput.value.trim();
+    const location = eventLocationInput.value.trim();
+    const description = eventDescriptionInput.value.trim();
+    const link = eventLinkInput.value.trim();
     const dateKey = selectedDateInput.value;
     
-    if (!text) {
-        alert('請輸入內容');
+    if (!title) {
+        alert('請輸入標題');
         return;
     }
+    
+    // User rule: "沒有時間... 不然就是預設全日"
+    // If user leaves time blank, we can default to '全日' OR keep it blank?
+    // Let's default to '全日' if blank, as per implied requirement or just let it be blank.
+    // The requirement said "No time -> pop message OR default all day".
+    // Since we are in Modal, user can see it is blank. If they save blank -> All Day?
+    
+    let finalTime = time;
+    if (!finalTime) finalTime = '全日';
 
-    const timeMatch = text.match(/^(\d{1,2}:\d{2})\s+(.*)/);
-    let newEvent = {};
-    if (timeMatch) {
-         newEvent = { time: timeMatch[1], title: timeMatch[2], link: link };
-    } else {
-         newEvent = { time: '', title: text, link: link };
-    }
+    const newEvent = {
+        title: title,
+        time: finalTime,
+        location: location,
+        description: description,
+        link: link
+    };
     
     if (!events[dateKey]) events[dateKey] = [];
     if (editingIndex >= 0) {
@@ -527,6 +637,8 @@ function saveEvent() {
     } else {
         events[dateKey].push(newEvent);
     }
+    
+    // Sort logic
     events[dateKey].sort((a, b) => {
         if (a.time === '全日') return -1;
         if (b.time === '全日') return 1;
@@ -537,9 +649,6 @@ function saveEvent() {
     renderCalendar();
     closeModal();
 }
-
-// Button references moved to top
-
 
 function openShareModal(text) {
     shareTextPreview.value = text;
@@ -558,13 +667,11 @@ shareModalOverlay.addEventListener('click', (e) => {
 // Social Share Actions
 btnShareLine.addEventListener('click', () => {
     const text = shareTextPreview.value;
-    // LINE URL Scheme
     window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, '_blank');
 });
 
 btnShareMessenger.addEventListener('click', async () => {
     const text = shareTextPreview.value;
-    // Messenger Process: Copy text -> Open App/Web
     try {
         await navigator.clipboard.writeText(text);
         alert('行程文字已複製！\n即將開啟 Messenger，請貼上送出。');
@@ -592,20 +699,16 @@ async function shareSchedule(customStart = null, customEnd = null) {
     let titleStr = "";
 
     if (customStart && customEnd) {
-        // 單日或指定範圍
         startDate = new Date(customStart);
         endDate = new Date(customEnd);
-        
         const m = startDate.getMonth() + 1;
         const d = startDate.getDate();
-        
         if (startDate.getTime() === endDate.getTime()) {
              titleStr = `📅 ${m}/${d} 行程`;
         } else {
              titleStr = `📅 ${m}/${d} - ... 行程`;
         }
     } else {
-        // Fallback
         if (currentView === 'week') {
             const startOfWeek = new Date(currentDate);
             startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -622,7 +725,6 @@ async function shareSchedule(customStart = null, customEnd = null) {
         }
     }
 
-    // 2. 收集該範圍內的行程
     let exportText = `${titleStr}\n------------------\n`;
     let hasEvents = false;
     
@@ -637,7 +739,7 @@ async function shareSchedule(customStart = null, customEnd = null) {
         const dayEvents = events[dateKey] || [];
         const holidayName = HOLIDAYS_2026[dateKey];
         
-        if (dayEvents.length > 0 || holidayName) {
+        if (dayEvents.length > 0) {
             hasEvents = true;
             const m = iterDate.getMonth() + 1;
             const d = iterDate.getDate();
@@ -648,20 +750,20 @@ async function shareSchedule(customStart = null, customEnd = null) {
             
             exportText += `${dateLine}\n`;
             
-            if (dayEvents.length > 0) {
-                dayEvents.forEach(evt => {
-                    if (evt.time === '全日') {
-                        exportText += `⭕ 全日: ${evt.title}\n`;
-                    } else if (evt.time) {
-                        exportText += `🕒 ${evt.time} ${evt.title}\n`;
-                    } else {
-                        exportText += `• ${evt.title}\n`;
-                    }
-                });
-            } else if (holidayName) {
-                exportText += `🎉 放假\n`;
-            }
-            exportText += `\n`;
+            dayEvents.forEach(evt => {
+                // Requested Format:
+                // 時間
+                // 地點
+                // 附註
+                // 網址
+                exportText += `時間：${evt.time || '全日'}\n`;
+                exportText += `事項：${evt.title}\n`; // Include title obviously
+                if (evt.location) exportText += `地點：${evt.location}\n`;
+                if (evt.description) exportText += `附註：${evt.description}\n`;
+                if (evt.link) exportText += `網址：${evt.link}\n`;
+                exportText += `\n`; 
+            });
+            exportText += `------------------\n`;
         }
         
         iterDate.setDate(iterDate.getDate() + 1);
@@ -671,9 +773,7 @@ async function shareSchedule(customStart = null, customEnd = null) {
         exportText += "尚無安排行程。\n";
     }
     
-    exportText += "------------------\nGenerated by Calendar Card App";
-
-    // 3. 開啟分享視窗 (取代原有的 navigator.share)
+    exportText += "Generated by Calendar Card App";
     openShareModal(exportText);
 }
 
@@ -686,7 +786,7 @@ function formatDateKey(date) {
 
 // Multi-Select Share
 function shareSelectedDates() {
-    const datesArr = Array.from(selectedDates).sort(); // Sort by date
+    const datesArr = Array.from(selectedDates).sort();
     if (datesArr.length === 0) return;
 
     let exportText = `📅 自選行程 (${datesArr.length}天)\n------------------\n`;
@@ -702,28 +802,22 @@ function shareSelectedDates() {
         let dateLine = `${m}/${d} ${dayName}`;
         if (holidayName) dateLine += ` [${holidayName}]`;
         
-        exportText += `${dateLine}\n`;
-        
         const dayEvents = events[dateKey] || [];
         if (dayEvents.length > 0) {
+            exportText += `${dateLine}\n`;
             dayEvents.forEach(evt => {
-                if (evt.time === '全日') {
-                    exportText += `⭕ 全日: ${evt.title}\n`;
-                } else if (evt.time) {
-                    exportText += `🕒 ${evt.time} ${evt.title}\n`;
-                } else {
-                    exportText += `• ${evt.title}\n`;
-                }
+                exportText += `時間：${evt.time || '全日'}\n`;
+                exportText += `事項：${evt.title}\n`;
+                if (evt.location) exportText += `地點：${evt.location}\n`;
+                if (evt.description) exportText += `附註：${evt.description}\n`;
+                if (evt.link) exportText += `網址：${evt.link}\n`;
+                exportText += `\n`;
             });
-        } else if (holidayName) {
-            exportText += `🎉 放假\n`;
-        } else {
-             exportText += `(無行程)\n`;
+             exportText += `------------------\n`;
         }
-        exportText += `\n`;
     });
 
-    exportText += "------------------\nGenerated by Calendar Card App";
+    exportText += "Generated by Calendar Card App";
     openShareModal(exportText);
 }
 
