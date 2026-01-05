@@ -63,6 +63,17 @@ const modalTitle = document.getElementById('modal-title');
 const saveBtn = document.getElementById('save-btn');
 const deleteBtn = document.getElementById('delete-btn');
 const smartInput = document.getElementById('smart-input');
+
+// Event List Modal Elements
+const eventListOverlay = document.getElementById('event-list-modal-overlay');
+const eventListContainer = document.getElementById('event-list-container');
+const eventListTitle = document.getElementById('event-list-title');
+const closeEventListBtn = document.getElementById('close-event-list-modal');
+const addFromListBtn = document.getElementById('add-from-list-btn');
+
+// Link Button
+const openLinkBtn = document.getElementById('open-link-btn');
+
 const selectModeBtn = document.getElementById('select-mode-btn');
 const eventRecurrenceInput = document.getElementById('event-recurrence');
 const eventRecurrenceEndInput = document.getElementById('event-recurrence-end');
@@ -137,6 +148,21 @@ function setupEventListeners() {
     saveBtn.addEventListener('click', saveEvent);
     if (deleteBtn) deleteBtn.addEventListener('click', deleteEvent);
     
+    // Event List Modal Listeners
+    if (closeEventListBtn) closeEventListBtn.addEventListener('click', closeEventListModal);
+    if (eventListOverlay) {
+        eventListOverlay.addEventListener('click', (e) => {
+            if (e.target === eventListOverlay) closeEventListModal();
+        });
+    }
+    if (addFromListBtn) {
+        addFromListBtn.addEventListener('click', () => {
+             const dateKey = eventListOverlay.dataset.dateKey;
+             closeEventListModal();
+             openAddModal(dateKey);
+        });
+    }
+
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });
@@ -149,6 +175,18 @@ function setupEventListeners() {
                  recurrenceEndGroup.style.display = 'block';
              } else {
                  recurrenceEndGroup.style.display = 'none';
+             }
+        });
+    }
+
+    // Open Link Button Logic
+    if (openLinkBtn) {
+        openLinkBtn.addEventListener('click', () => {
+             const url = eventLinkInput.value.trim();
+             if (url) {
+                 window.open(url, '_blank');
+             } else {
+                 alert('請先輸入網址');
              }
         });
     }
@@ -377,11 +415,8 @@ function createDayCard(date, isOtherMonth) {
              } else if (dayEvents.length === 1) {
                  editEvent(dateKey, 0);
              } else {
-                 // > 1: List is shown (by selectDay), scroll to it for convenience
-                 const listContainer = document.getElementById('selected-day-events');
-                 if (listContainer) {
-                     listContainer.scrollIntoView({behavior: 'smooth', block: 'start'});
-                 }
+                 // > 1: Open List Modal
+                 openEventListModal(dateKey);
              }
              return;
         }
@@ -869,6 +904,45 @@ function saveEvent() {
     localStorage.setItem('calendar_events', JSON.stringify(events));
     renderCalendar();
     closeModal();
+}
+
+// --- Event List Modal Functions ---
+function openEventListModal(dateKey) {
+    if (!eventListOverlay) return;
+    
+    // Store dateKey on overlay for "Add New" button
+    eventListOverlay.dataset.dateKey = dateKey;
+    
+    // Format Title
+    const dateObj = new Date(dateKey);
+    const m = dateObj.getMonth() + 1;
+    const d = dateObj.getDate();
+    const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+    const w = dayNames[dateObj.getDay()];
+    eventListTitle.textContent = `${m}/${d} (${w}) 行程列表`;
+
+    const dayEvents = events[dateKey] || [];
+    
+    // Generate HTML using similar logic to renderSelectedDayEvents
+    // But styled for modal list
+    eventListContainer.innerHTML = dayEvents.map((evt, index) => {
+         const timeDisplay = evt.time === '全日' ? '全日' : (evt.time || '');
+         return `
+         <div class="event-item" onclick="closeEventListModal(); editEvent('${dateKey}', ${index});" style="cursor:pointer; border:1px solid #e0e7ff; margin-bottom:0.5rem; padding:0.75rem; border-radius:0.5rem; background:white;">
+             <div style="font-weight:bold; color:#4f46e5; margin-bottom:0.25rem;">${timeDisplay}</div>
+             <div class="event-title" style="font-size:1rem; font-weight:500;">
+                ${evt.title}
+             </div>
+             ${evt.location ? `<div style="font-size:0.85rem; color:#6b7280; margin-top:0.25rem;">📍 ${evt.location}</div>` : ''}
+         </div>
+         `;
+    }).join('');
+
+    eventListOverlay.classList.add('active');
+}
+
+function closeEventListModal() {
+    if (eventListOverlay) eventListOverlay.classList.remove('active');
 }
 
 function deleteEvent() {

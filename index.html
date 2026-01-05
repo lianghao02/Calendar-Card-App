@@ -85,7 +85,10 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label">相關連結 (Link)</label>
-                    <input type="text" class="input-field" id="event-link" placeholder="https://...">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" class="input-field" id="event-link" placeholder="https://..." style="flex: 1;">
+                        <button type="button" id="open-link-btn" class="btn-primary" style="padding: 0 1rem; background-color: #6366f1;">開啟</button>
+                    </div>
                 </div>
                 <input type="hidden" id="selected-date">
             </div>
@@ -93,6 +96,22 @@
                 <button class="btn-danger" id="delete-btn" style="margin-right: auto; display: none; background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">刪除</button>
                 <button class="btn-cancel" id="cancel-btn">取消</button>
                 <button class="btn-primary" id="save-btn">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Selection Modal (Mobile > 1 event) -->
+    <div class="modal-overlay" id="event-list-modal-overlay" style="z-index: 2000;">
+        <div class="modal" style="max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="event-list-title">選擇行程</h3>
+                <button class="btn-icon" id="close-event-list-modal">✕</button>
+            </div>
+            <div class="modal-body" id="event-list-container" style="overflow-y: auto; flex: 1; padding: 1rem 0;">
+                <!-- List injected here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="add-from-list-btn" style="width:100%">+ 新增此日行程</button>
             </div>
         </div>
     </div>
@@ -122,6 +141,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3"></script>
+    <script src="script.js?v=1.4"></script>
 </body>
 </html>
