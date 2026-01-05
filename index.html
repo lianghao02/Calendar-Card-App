@@ -9,14 +9,29 @@
 </head>
 <body>
     <header>
-        <h1>
-            <span class="icon">📅</span>
-            <span id="current-month-year">2026 年 1 月</span>
-        </h1>
-        <div class="controls">
-            <button class="btn-icon" id="prev-week" title="上一週">&lt;</button>
-            <button class="btn-primary" id="today-btn">今天</button>
-            <button class="btn-icon" id="next-week" title="下一週">&gt;</button>
+        <div class="header-top">
+            <h1>
+                <span class="icon">📅</span>
+                <span id="current-month-year">2026 年 1 月</span>
+            </h1>
+            <div class="controls">
+                <div class="view-toggle">
+                    <button class="btn-toggle active" id="view-week">週</button>
+                    <button class="btn-toggle" id="view-month">月</button>
+                </div>
+                <div class="nav-controls">
+                    <button class="btn-icon" id="select-mode-btn" title="多選模式 (選擇日期分享)">☑️</button>
+                    <div class="divider" style="width: 1px; height: 24px; background: #cbd5e1; margin: 0 0.5rem;"></div>
+                    <button class="btn-icon" id="share-btn" title="分享行程">📤</button>
+                    <button class="btn-icon" id="prev-btn" title="上一頁">&lt;</button>
+                    <button class="btn-primary" id="today-btn">今天</button>
+                    <button class="btn-icon" id="next-btn" title="下一頁">&gt;</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="smart-input-container">
+            <input type="text" id="smart-input" class="smart-input" placeholder="💡 智慧輸入：試試「明天 10:00 開會」或「下週五 交報告」..." autocomplete="off">
         </div>
     </header>
 
@@ -33,14 +48,43 @@
             </div>
             <div class="modal-body">
                 <div class="input-group">
-                    <label class="input-label">內容 (格式範例：10:00 開會)</label>
-                    <textarea class="input-field" id="event-input" rows="4" placeholder="輸入事項..."></textarea>
+                    <label class="input-label">時間與內容 (格式範例：10:00 開會)</label>
+                    <textarea class="input-field" id="event-input" rows="3" placeholder="輸入事項..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">相關連結 (選填)</label>
+                    <input type="text" class="input-field" id="event-link" placeholder="https://...">
                 </div>
                 <input type="hidden" id="selected-date">
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" id="cancel-btn">取消</button>
                 <button class="btn-primary" id="save-btn">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="share-modal-overlay">
+        <div class="modal share-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">分享行程</h2>
+                <button class="close-modal" id="close-share-modal">&times;</button>
+            </div>
+            <div class="share-preview-container">
+                <label class="input-label">內容預覽</label>
+                <textarea id="share-text-preview" readonly></textarea>
+            </div>
+            <div class="share-actions">
+                <button class="social-btn btn-line" id="share-line">
+                    <span class="icon">💬</span> LINE
+                </button>
+                <button class="social-btn btn-messenger" id="share-messenger">
+                    <span class="icon">⚡</span> Messenger
+                </button>
+                <button class="social-btn btn-copy" id="share-copy">
+                    <span class="icon">📋</span> 複製文字
+                </button>
             </div>
         </div>
     </div>
