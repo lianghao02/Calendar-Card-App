@@ -61,8 +61,13 @@ const eventLinkInput = document.getElementById('event-link');
 const selectedDateInput = document.getElementById('selected-date');
 const modalTitle = document.getElementById('modal-title');
 const saveBtn = document.getElementById('save-btn');
+const deleteBtn = document.getElementById('delete-btn');
 const smartInput = document.getElementById('smart-input');
 const selectModeBtn = document.getElementById('select-mode-btn');
+const eventRecurrenceInput = document.getElementById('event-recurrence');
+const eventRecurrenceEndInput = document.getElementById('event-recurrence-end');
+const recurrenceEndGroup = document.getElementById('recurrence-end-date-group');
+const recurrenceInfo = document.getElementById('recurrence-info');
 
 // View Toggles
 const viewWeekBtn = document.getElementById('view-week');
@@ -130,10 +135,47 @@ function setupEventListeners() {
     document.getElementById('close-modal').addEventListener('click', closeModal);
     document.getElementById('cancel-btn').addEventListener('click', closeModal);
     saveBtn.addEventListener('click', saveEvent);
+    if (deleteBtn) deleteBtn.addEventListener('click', deleteEvent);
     
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });
+
+    // Recurrence Toggle
+    if (eventRecurrenceInput) {
+        eventRecurrenceInput.addEventListener('change', () => {
+             updateRecurrenceInfo();          
+             if (eventRecurrenceInput.value === 'custom') {
+                 recurrenceEndGroup.style.display = 'block';
+             } else {
+                 recurrenceEndGroup.style.display = 'none';
+             }
+        });
+    }
+}
+
+function updateRecurrenceInfo() {
+    if (!eventRecurrenceInput || !recurrenceInfo) return;
+    const dateKey = selectedDateInput.value;
+    if (!dateKey) {
+        recurrenceInfo.style.display = 'none';
+        return;
+    }
+    
+    const val = eventRecurrenceInput.value;
+    if (val === 'none') {
+        recurrenceInfo.style.display = 'none';
+    } else {
+        // Calculate Day of Week
+        const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+        // Parse Local YMD
+        const [y, m, d] = dateKey.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        const dayName = dayNames[dateObj.getDay()];
+        
+        recurrenceInfo.textContent = `將於每週${dayName}重複此活動`;
+        recurrenceInfo.style.display = 'block';
+    }
 }
 
 function toggleSelectionMode() {
@@ -277,9 +319,9 @@ function createDayCard(date, isOtherMonth) {
             ? `<span class="event-badge all-day">全日</span>` 
             : (evt.time ? `<span class="event-time">${evt.time}</span>` : '');
             
-        // Show Link Icon if link exists
-        const linkIcon = evt.link ? `<span style="margin-left:4px; font-size: 0.8em;" title="包含連結">🔗</span>` : '';
-        const titleHtml = `<span class="event-title">${evt.title}${linkIcon}</span>`;
+        // Show Link Icon if link exists (Direct Click)
+        const linkIcon = evt.link ? `<a href="${evt.link}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結">🔗</a>` : '';
+        const titleHtml = `<span class="event-title">${evt.title}</span>${linkIcon}`;
             
         let onClickAction = '';
         
@@ -660,10 +702,25 @@ window.openAddModal = function(dateKey, preFill = null) {
         saveBtn.textContent = '儲存';
     }
     
+    // Hide Delete Button for New Events
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
     // Clear editing index if adding new
     if (preFill || editingIndex === -1) editingIndex = -1;
 
     modalOverlay.classList.add('active');
+    
+    // Reset Recurrence (Available only for new events)
+    if (eventRecurrenceInput) {
+        eventRecurrenceInput.value = 'none';
+        eventRecurrenceInput.disabled = (editingIndex >= 0); // Disable recurrence when editing existing
+    }
+    if (recurrenceEndGroup) recurrenceEndGroup.style.display = 'none';
+    if (eventRecurrenceEndInput) eventRecurrenceEndInput.value = '';
+    
+    // Update Info Text
+    updateRecurrenceInfo();
+
     setTimeout(() => eventInput.focus(), 100); 
 }
 
@@ -682,6 +739,10 @@ window.editEvent = function(dateKey, index) {
     editingIndex = index;
     modalTitle.textContent = `編輯行程 (${dateKey})`;
     saveBtn.textContent = '更新';
+    
+    // Show Delete Button for Existing Events
+    if (deleteBtn) deleteBtn.style.display = 'block';
+
     modalOverlay.classList.add('active');
     setTimeout(() => eventInput.focus(), 100);
 }
@@ -724,7 +785,61 @@ function saveEvent() {
     if (editingIndex >= 0) {
         events[dateKey][editingIndex] = newEvent;
     } else {
-        events[dateKey].push(newEvent);
+        // Handle Recurrence (Only for new events)
+        const recurrence = eventRecurrenceInput ? eventRecurrenceInput.value : 'none';
+        
+        if (recurrence === 'none' || editingIndex >= 0) {
+            events[dateKey].push(newEvent);
+        } else {
+            // Recurrence Logic
+            // Parse Local Date robustly
+            const [y, m, d] = dateKey.split('-').map(Number);
+            let startDate = new Date(y, m - 1, d);
+            let endDate = new Date(startDate);
+            
+            if (recurrence === 'weekly_current_month') {
+                // End of current month
+                endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+            } else if (recurrence === 'weekly_3_month') {
+                // 3 months later
+                endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, startDate.getDate());
+            } else if (recurrence === 'custom') {
+                const customEnd = eventRecurrenceEndInput.value;
+                if (customEnd) {
+                    endDate = new Date(customEnd);
+                } else {
+                    // Fallback if no date selected
+                     events[dateKey].push(newEvent);
+                     alert('未選擇結束日期，僅新增單一事件');
+                     // reset logic to avoid loop???
+                     // actually just return/break
+                     endDate = startDate; 
+                }
+            }
+
+            // Loop and add events
+            // Start from valid start date
+            let loopDate = new Date(startDate);
+            while (loopDate <= endDate) {
+                const loopKey = formatDateKey(loopDate);
+                
+                // Clone event object to ensure independence
+                const clonedEvent = { ...newEvent };
+                
+                if (!events[loopKey]) events[loopKey] = [];
+                events[loopKey].push(clonedEvent);
+                
+                // Sort immediately for this day
+                events[loopKey].sort((a, b) => {
+                    if (a.time === '全日') return -1;
+                    if (b.time === '全日') return 1;
+                    return (a.time || '').localeCompare(b.time || '');
+                });
+
+                // Next week
+                loopDate.setDate(loopDate.getDate() + 7);
+            }
+        }
     }
     
     // Sort logic
@@ -734,6 +849,24 @@ function saveEvent() {
         return (a.time || '').localeCompare(b.time || '');
     });
 
+    localStorage.setItem('calendar_events', JSON.stringify(events));
+    renderCalendar();
+    closeModal();
+}
+
+function deleteEvent() {
+    const dateKey = selectedDateInput.value;
+    if (editingIndex === -1) return; // Should not happen
+    
+    if (!confirm('確定要刪除這個行程嗎？')) return;
+    
+    if (events[dateKey]) {
+        events[dateKey].splice(editingIndex, 1);
+        if (events[dateKey].length === 0) {
+            delete events[dateKey];
+        }
+    }
+    
     localStorage.setItem('calendar_events', JSON.stringify(events));
     renderCalendar();
     closeModal();

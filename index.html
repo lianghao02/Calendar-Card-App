@@ -62,6 +62,20 @@
                     <input type="text" class="input-field" id="event-time" placeholder="例如：10:00, 20:00 或留空">
                 </div>
                 <div class="input-group">
+                    <label class="input-label">重複設定 (Recurrence)</label>
+                    <select class="input-field" id="event-recurrence">
+                        <option value="none" selected>不重複</option>
+                        <option value="weekly_current_month">每週 (直到本月底)</option>
+                        <option value="weekly_3_month">每週 (未來 3 個月)</option>
+                        <option value="custom">自訂結束日期...</option>
+                    </select>
+                    <div id="recurrence-info" style="font-size: 0.85rem; color: #6366f1; margin-top: 0.5rem; display: none;"></div>
+                </div>
+                <div class="input-group" id="recurrence-end-date-group" style="display:none;">
+                    <label class="input-label">結束日期 (End Date)</label>
+                    <input type="date" class="input-field" id="event-recurrence-end">
+                </div>
+                <div class="input-group">
                     <label class="input-label">地點 (Location)</label>
                     <input type="text" class="input-field" id="event-location" placeholder="輸入地點...">
                 </div>
@@ -76,6 +90,7 @@
                 <input type="hidden" id="selected-date">
             </div>
             <div class="modal-footer">
+                <button class="btn-danger" id="delete-btn" style="margin-right: auto; display: none; background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">刪除</button>
                 <button class="btn-cancel" id="cancel-btn">取消</button>
                 <button class="btn-primary" id="save-btn">儲存</button>
             </div>
