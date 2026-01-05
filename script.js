@@ -103,22 +103,52 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initApp() {
     showLoading();
     try {
-        const data = await API.fetchAllEvents();
-        if (data && data.events) {
-            events = data.events;
+        const response = await API.fetchAllEvents();
+        // Backend returns: { status: 'success', data: { events: ... }, quota: ... }
+        if (response && response.data && response.data.events) {
+            // Normalize keys (Handle case where Sheet returns Date objects as keys)
+            events = normalizeEventKeys(response.data.events);
+        } else {
+             // Fallback or empty?
+             // console.log("No events found or wrong structure", response);
         }
         
         // Rate Limit Handling (Global Check or per request)
-        if (data && data.quota) {
-            checkQuotaLimit(data.quota);
+        if (response && response.quota) {
+            checkQuotaLimit(response.quota);
         }
     } catch (err) {
+        console.error(err);
         alert('無法讀取雲端資料，將暫時顯示空白日曆。\n錯誤：' + err.message);
     } finally {
         hideLoading();
         renderCalendar();
     }
 }
+
+function normalizeEventKeys(rawEvents) {
+    const normalized = {};
+    for (const [key, value] of Object.entries(rawEvents)) {
+        // Check if key is already YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+            normalized[key] = value;
+        } else {
+            // Try to parse date string (e.g. "2026-01-12T00:00:00.000Z" or "Mon Jan 12...")
+            const d = new Date(key);
+            if (!isNaN(d.getTime())) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const date = String(d.getDate()).padStart(2, '0');
+                const newKey = `${y}-${m}-${date}`;
+                normalized[newKey] = value;
+            } else {
+                 // Keep as is if parsing fails
+                 normalized[key] = value;
+            }
+        }
+    }
+    return normalized;
+
 
 function showLoading() {
     const overlay = document.getElementById('loading-overlay');
