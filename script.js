@@ -433,7 +433,7 @@ function renderSelectedDayEvents(dateKey) {
     } else {
         html += dayEvents.map((evt, index) => {
              const timeDisplay = evt.time === '全日' ? '全日' : (evt.time || '');
-             const linkBtn = evt.link ? `<a href="${evt.link}" target="_blank" style="margin-left:8px; text-decoration:none;">🔗</a>` : '';
+             const linkBtn = evt.link ? `<a href="${evt.link}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結" style="margin-left:8px; text-decoration:none;">🔗</a>` : '';
              
              return `
              <div class="event-item" onclick="editEvent('${dateKey}', ${index})">
