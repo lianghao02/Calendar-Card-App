@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每週日曆 | Weekly Calendar</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>
+            <span class="icon">📅</span>
+            <span id="current-month-year">2026 年 1 月</span>
+        </h1>
+        <div class="controls">
+            <button class="btn-icon" id="prev-week" title="上一週">&lt;</button>
+            <button class="btn-primary" id="today-btn">今天</button>
+            <button class="btn-icon" id="next-week" title="下一週">&gt;</button>
+        </div>
+    </header>
+
+    <main class="calendar-container" id="calendar-grid">
+        <!-- Day Cards will be generated here by JS -->
+    </main>
+
+    <!-- Modal for adding/editing events -->
+    <div class="modal-overlay" id="event-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">新增事件</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label">內容 (格式範例：10:00 開會)</label>
+                    <textarea class="input-field" id="event-input" rows="4" placeholder="輸入事項..."></textarea>
+                </div>
+                <input type="hidden" id="selected-date">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancel-btn">取消</button>
+                <button class="btn-primary" id="save-btn">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
