@@ -1,6 +1,7 @@
 // 狀態變數
 let currentDate = new Date();
-const events = JSON.parse(localStorage.getItem('calendar_events')) || {};
+let events = {}; // Initialized empty, will load from API
+
 let editingIndex = -1;
 let currentView = 'month'; 
 
@@ -95,9 +96,49 @@ const btnShareCopy = document.getElementById('share-copy');
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
-    renderCalendar();
+    initApp(); // Use initApp to fetch data
     setupEventListeners();
 });
+
+async function initApp() {
+    showLoading();
+    try {
+        const data = await API.fetchAllEvents();
+        if (data && data.events) {
+            events = data.events;
+        }
+        
+        // Rate Limit Handling (Global Check or per request)
+        if (data && data.quota) {
+            checkQuotaLimit(data.quota);
+        }
+    } catch (err) {
+        alert('無法讀取雲端資料，將暫時顯示空白日曆。\n錯誤：' + err.message);
+    } finally {
+        hideLoading();
+        renderCalendar();
+    }
+}
+
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if(overlay) overlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if(overlay) overlay.style.display = 'none';
+}
+
+function checkQuotaLimit(quota) {
+    if (quota.isBlocked) {
+        alert('⚠️ 警告：每日 API 使用量已達 90%，為了保護資料庫，暫時無法新增/修改行程。');
+    } else if (quota.isWarning) {
+        // Show non-blocking toast (using console for now or simple alert once)
+        console.warn('⚠️ 注意：API 使用量已達 80%');
+    }
+}
+
 
 // 設定事件監聽器
 function setupEventListeners() {
@@ -803,7 +844,7 @@ function closeModal() {
     modalOverlay.classList.remove('active');
 }
 
-function saveEvent() {
+async function saveEvent() {
     const title = eventInput.value.trim();
     const time = eventTimeInput.value.trim();
     const location = eventLocationInput.value.trim();
@@ -833,77 +874,136 @@ function saveEvent() {
         link: link
     };
     
+    // Optimistic Update
     if (!events[dateKey]) events[dateKey] = [];
+    
+    // Backup for revert
+    const originalEvents = JSON.parse(JSON.stringify(events[dateKey]));
+
     if (editingIndex >= 0) {
         events[dateKey][editingIndex] = newEvent;
     } else {
         // Handle Recurrence (Only for new events)
         const recurrence = eventRecurrenceInput ? eventRecurrenceInput.value : 'none';
         
-        if (recurrence === 'none' || editingIndex >= 0) {
-            events[dateKey].push(newEvent);
+        if (recurrence === 'none') {
+             events[dateKey].push(newEvent);
         } else {
             // Recurrence Logic
-            // Parse Local Date robustly
             const [y, m, d] = dateKey.split('-').map(Number);
             let startDate = new Date(y, m - 1, d);
             let endDate = new Date(startDate);
             
             if (recurrence === 'weekly_current_month') {
-                // End of current month
                 endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
             } else if (recurrence === 'weekly_3_month') {
-                // 3 months later
                 endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, startDate.getDate());
             } else if (recurrence === 'custom') {
-                const customEnd = eventRecurrenceEndInput.value;
-                if (customEnd) {
-                    endDate = new Date(customEnd);
-                } else {
-                    // Fallback if no date selected
-                     events[dateKey].push(newEvent);
-                     alert('未選擇結束日期，僅新增單一事件');
-                     // reset logic to avoid loop???
-                     // actually just return/break
-                     endDate = startDate; 
-                }
+                 const customEnd = eventRecurrenceEndInput.value;
+                 if (customEnd) endDate = new Date(customEnd);
+                 else endDate = startDate; 
             }
 
-            // Loop and add events
-            // Start from valid start date
             let loopDate = new Date(startDate);
+            // Skip first date as it is handled by main logic if we push to events[dateKey] below?
+            // Wait, logic above was: if editing, invalid. If new, push.
+            // Recurrence logic needs to handle multiple API calls? Or Batch?
+            // Current API design: saveDayEvents (single day).
+            // Multi-day recurrence = Multiple API Calls = BAD for Quota.
+            // But User requirement: 4000 limit. 
+            // If user adds 1 recurrence event for 3 months (12 weeks) = 12 API calls.
+            // It is acceptable but risky if heavy usage.
+            // Ideally API should support batch update, but I implemented save_day.
+            
+            // Let's implement client-side Loop but we must sequence them or Promise.all
+            // BUT, mixing optimistic UI with async loop is complex.
+            // Strategy: 
+            // 1. Update LOCAL events immediately for all dates.
+            // 2. Fire API calls in background (with loading).
+            
+            // Note: Original logic mixed pushing 'newEvent' for dateKey AND loop for others?
+            // Line 843: if none or editing -> push.
+            // Line 845: else -> loop.
+            // Inside loop (875), it starts from startDate (which IS dateKey).
+            // So we don't need to push separately.
+            
+           // [REFACTORED LOCAL UPDATE]
             while (loopDate <= endDate) {
                 const loopKey = formatDateKey(loopDate);
-                
-                // Clone event object to ensure independence
-                const clonedEvent = { ...newEvent };
-                
                 if (!events[loopKey]) events[loopKey] = [];
+                const clonedEvent = { ...newEvent };
                 events[loopKey].push(clonedEvent);
-                
-                // Sort immediately for this day
-                events[loopKey].sort((a, b) => {
+                // Sort
+                events[loopKey].sort((a, b) => { // ... sort logic ... 
                     if (a.time === '全日') return -1;
                     if (b.time === '全日') return 1;
                     return (a.time || '').localeCompare(b.time || '');
                 });
-
-                // Next week
                 loopDate.setDate(loopDate.getDate() + 7);
             }
         }
     }
     
-    // Sort logic
-    events[dateKey].sort((a, b) => {
-        if (a.time === '全日') return -1;
-        if (b.time === '全日') return 1;
-        return (a.time || '').localeCompare(b.time || '');
-    });
+    // Sort logic for the main date (if not handled in recurrence loop)
+    if (editingIndex >= 0 || (eventRecurrenceInput && eventRecurrenceInput.value === 'none')) {
+         events[dateKey].sort((a, b) => {
+            if (a.time === '全日') return -1;
+            if (b.time === '全日') return 1;
+            return (a.time || '').localeCompare(b.time || '');
+        });
+    }
 
-    localStorage.setItem('calendar_events', JSON.stringify(events));
-    renderCalendar();
+    // --- API SYNC ---
     closeModal();
+    renderCalendar(); // Optimistic render
+    showLoading();
+
+    // Determine what to save
+    // If recurrence, we have multiple days modified.
+    // If single, only one.
+    
+    const recurrence = eventRecurrenceInput ? eventRecurrenceInput.value : 'none';
+    const promises = [];
+    
+    if (editingIndex === -1 && recurrence !== 'none') {
+        // Recurrence Sync
+         const [y, m, d] = dateKey.split('-').map(Number);
+         let startDate = new Date(y, m - 1, d);
+         let endDate = new Date(startDate);
+         // ... Calculate EndDate again ...
+        if (recurrence === 'weekly_current_month') {
+            endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+        } else if (recurrence === 'weekly_3_month') {
+            endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, startDate.getDate());
+        } else if (recurrence === 'custom') {
+             const customEnd = eventRecurrenceEndInput.value;
+             if (customEnd) endDate = new Date(customEnd);
+             else endDate = startDate; 
+        }
+        
+        let loopDate = new Date(startDate);
+        while (loopDate <= endDate) {
+             const loopKey = formatDateKey(loopDate);
+             promises.push(API.saveDayEvents(loopKey, events[loopKey]));
+             loopDate.setDate(loopDate.getDate() + 7);
+        }
+    } else {
+        // Single Day Sync
+        promises.push(API.saveDayEvents(dateKey, events[dateKey]));
+    }
+
+    try {
+        await Promise.all(promises);
+        // Success
+    } catch (err) {
+        alert('儲存失敗，請檢查網路或是 API 配額。\n' + err.message);
+        // Revert is hard for recurrence. For now, just alert.
+        // Reload to ensure consistency?
+        // API.fetchAllEvents(); 
+    } finally {
+        hideLoading();
+    }
+
 }
 
 // --- Event List Modal Functions ---
@@ -945,22 +1045,40 @@ function closeEventListModal() {
     if (eventListOverlay) eventListOverlay.classList.remove('active');
 }
 
-function deleteEvent() {
+async function deleteEvent() {
     const dateKey = selectedDateInput.value;
     if (editingIndex === -1) return; // Should not happen
     
     if (!confirm('確定要刪除這個行程嗎？')) return;
     
+    // Optimistic Delete
+    const originalEvents = [...events[dateKey]];
+    
     if (events[dateKey]) {
         events[dateKey].splice(editingIndex, 1);
         if (events[dateKey].length === 0) {
-            delete events[dateKey];
+            delete events[dateKey]; // or keep as empty array? API prefers array to update
+            // Actually my API logic: if [], it deletes row. 
         }
     }
     
-    localStorage.setItem('calendar_events', JSON.stringify(events));
-    renderCalendar();
     closeModal();
+    renderCalendar();
+    showLoading();
+
+    try {
+        // If keys deleted? handle empty
+        const eventsToSave = events[dateKey] || [];
+        await API.saveDayEvents(dateKey, eventsToSave);
+    } catch (err) {
+        alert('刪除失敗：' + err.message);
+        // Revert
+        events[dateKey] = originalEvents;
+        renderCalendar();
+    } finally {
+        hideLoading();
+    }
+
 }
 
 function openShareModal(text) {
