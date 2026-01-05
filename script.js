@@ -365,7 +365,24 @@ function createDayCard(date, isOtherMonth) {
     dayCard.onclick = (e) => {
         // Handle Mobile Split View Selection
         if (window.innerWidth <= 640 && currentView === 'month' && !isSelectionMode) {
+             // Always render selection list first (so it's there if they cancel)
              selectDay(dateKey);
+             
+             // Logic: If 0 events -> Open Add Modal
+             // If 1 event -> Open Edit Modal
+             // If > 1 event -> Just scroll to list (SelectDay already did this? maybe scroll)
+             const dayEvents = events[dateKey] || [];
+             if (dayEvents.length === 0) {
+                 openAddModal(dateKey);
+             } else if (dayEvents.length === 1) {
+                 editEvent(dateKey, 0);
+             } else {
+                 // > 1: List is shown (by selectDay), scroll to it for convenience
+                 const listContainer = document.getElementById('selected-day-events');
+                 if (listContainer) {
+                     listContainer.scrollIntoView({behavior: 'smooth', block: 'start'});
+                 }
+             }
              return;
         }
 
