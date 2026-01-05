@@ -2,7 +2,7 @@
 let currentDate = new Date();
 const events = JSON.parse(localStorage.getItem('calendar_events')) || {};
 let editingIndex = -1;
-let currentView = 'week'; 
+let currentView = 'month'; 
 
 // 2026 台灣國定假日 (Source: Search Results)
 const HOLIDAYS_2026 = {
