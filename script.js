@@ -148,7 +148,7 @@ function normalizeEventKeys(rawEvents) {
         }
     }
     return normalized;
-
+}
 
 function showLoading() {
     const overlay = document.getElementById('loading-overlay');
