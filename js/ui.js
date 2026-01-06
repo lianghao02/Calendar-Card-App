@@ -201,16 +201,8 @@ function createDayCard(container, date, isOtherMonth) {
     
     dayCard.onclick = (e) => {
         if (window.innerWidth <= 640 && state.currentView === 'month' && !state.isSelectionMode) {
-             selectDay(dateKey); // Call the exported selectDay or window.selectDay
-             
-             const evtCount = (state.events[dateKey] || []).length;
-             if (evtCount === 0) {
-                 window.openAddModal(dateKey);
-             } else if (evtCount === 1) {
-                 window.editEvent(dateKey, 0);
-             } else {
-                 window.openEventListModal(dateKey);
-             }
+             selectDay(dateKey); 
+             // Mobile Split View: Just select, don't open modal immediately.
              return;
         }
 
