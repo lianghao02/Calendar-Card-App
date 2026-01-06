@@ -328,6 +328,15 @@ button {
     -webkit-text-fill-color: initial;
 }
 
+
+.btn-addon {
+    padding: 0 1rem;
+    background-color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: none; /* Override btn-primary gradient if needed */
+}
 /* Events List */
 .events-container {
     flex: 1;
@@ -521,6 +530,7 @@ button {
 /* Modal */
 .modal-overlay {
     background: rgba(30, 41, 59, 0.4);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -573,7 +583,7 @@ button {
 }
 .input-label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); }
 
-.modal-footer { display: flex; justify-content: flex-end; gap: 1rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 
 /* Loading */
 .loading-overlay {
@@ -593,7 +603,43 @@ button {
 
 /* Share Modal Helpers */
 .share-actions { display: flex; flex-direction: column; gap: 0.75rem; }
-#share-text-preview { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.75rem; width: 100%; height: 150px; resize: none; margin-bottom: 1rem;}
+/* Social Buttons */
+.social-btn {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.social-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    opacity: 0.95;
+}
+
+.btn-line {
+    background-color: #06C755; /* LINE Green */
+}
+
+.btn-messenger {
+    background: linear-gradient(to right, #00B2FF, #006AFF); /* Messenger Gradient */
+}
+
+.btn-copy {
+    background-color: #475569; /* Slate 600 */
+}
+
+#share-text-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem; width: 100%; height: 150px; resize: none; margin-bottom: 1rem;}
 
 /* --- Utilities & Helper Classes (Refactored from inline styles) --- */
 .u-hidden { display: none !important; }
