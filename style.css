@@ -594,3 +594,38 @@ button {
 /* Share Modal Helpers */
 .share-actions { display: flex; flex-direction: column; gap: 0.75rem; }
 #share-text-preview { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.75rem; width: 100%; height: 150px; resize: none; margin-bottom: 1rem;}
+
+/* --- Utilities & Helper Classes (Refactored from inline styles) --- */
+.u-hidden { display: none !important; }
+.u-flex-gap-sm { display: flex; gap: 0.5rem; }
+.u-flex-1 { flex: 1; }
+.u-w-full { width: 100%; }
+
+.input-help-text {
+    font-size: 0.85rem; 
+    color: var(--primary-color); 
+    margin-top: 0.5rem; 
+    display: none;
+}
+
+.modal-event-list-overlay { z-index: 2000; }
+.modal-event-list-content { max-height: 80vh; display: flex; flex-direction: column; }
+.modal-event-list-body { overflow-y: auto; flex: 1; padding: 1rem 0; }
+
+.btn-delete {
+    margin-right: auto; 
+    display: none; 
+    background-color: var(--danger-color); 
+    color: white; 
+    border: none; 
+    padding: 0.5rem 1rem; 
+    border-radius: 0.5rem; 
+    cursor: pointer;
+}
+
+.divider {
+    width: 1px; 
+    height: 24px; 
+    background: #cbd5e1; 
+    margin: 0 0.5rem;
+}

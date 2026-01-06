@@ -23,7 +23,7 @@
                 </div>
                 <div class="nav-controls">
                     <button class="btn-icon" id="select-mode-btn" title="多選模式 (選擇日期分享)">☑️</button>
-                    <div class="divider" style="width: 1px; height: 24px; background: #cbd5e1; margin: 0 0.5rem;"></div>
+                    <div class="divider"></div>
                     <button class="btn-icon" id="share-btn" title="分享行程">📤</button>
                     <button class="btn-icon" id="prev-btn" title="上一頁">&lt;</button>
                     <button class="btn-primary" id="today-btn">今天</button>
@@ -65,16 +65,15 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label">重複設定 (Recurrence)</label>
-                    <select class="input-field" id="event-recurrence">
+                    <select class="input-field" id="event-recurrence" aria-label="重複設定 (Recurrence)">
                         <option value="none" selected>不重複</option>
                         <option value="weekly_current_month">每週 (直到本月底)</option>
                         <option value="weekly_3_month">每週 (未來 3 個月)</option>
                         <option value="custom">自訂結束日期...</option>
                     </select>
-                    <div id="recurrence-info"
-                        style="font-size: 0.85rem; color: #6366f1; margin-top: 0.5rem; display: none;"></div>
+                    <div id="recurrence-info" class="input-help-text"></div>
                 </div>
-                <div class="input-group" id="recurrence-end-date-group" style="display:none;">
+                <div class="input-group u-hidden" id="recurrence-end-date-group">
                     <label class="input-label">結束日期 (End Date)</label>
                     <input type="date" class="input-field" id="event-recurrence-end">
                 </div>
@@ -88,9 +87,8 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label">相關連結 (Link)</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" class="input-field" id="event-link" placeholder="https://..."
-                            style="flex: 1;">
+                    <div class="u-flex-gap-sm">
+                        <input type="text" class="input-field u-flex-1" id="event-link" placeholder="https://...">
                         <button type="button" id="open-link-btn" class="btn-primary"
                             style="padding: 0 1rem; background-color: #6366f1;">開啟</button>
                     </div>
@@ -98,8 +96,7 @@
                 <input type="hidden" id="selected-date">
             </div>
             <div class="modal-footer">
-                <button class="btn-danger" id="delete-btn"
-                    style="margin-right: auto; display: none; background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">刪除</button>
+                <button class="btn-delete" id="delete-btn">刪除</button>
                 <button class="btn-cancel" id="cancel-btn">取消</button>
                 <button class="btn-primary" id="save-btn">儲存</button>
             </div>
@@ -107,17 +104,17 @@
     </div>
 
     <!-- Event Selection Modal (Mobile > 1 event) -->
-    <div class="modal-overlay" id="event-list-modal-overlay" style="z-index: 2000;">
-        <div class="modal" style="max-height: 80vh; display: flex; flex-direction: column;">
+    <div class="modal-overlay modal-event-list-overlay" id="event-list-modal-overlay">
+        <div class="modal modal-event-list-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="event-list-title">選擇行程</h3>
                 <button class="btn-icon" id="close-event-list-modal">✕</button>
             </div>
-            <div class="modal-body" id="event-list-container" style="overflow-y: auto; flex: 1; padding: 1rem 0;">
+            <div class="modal-body modal-event-list-body" id="event-list-container">
                 <!-- List injected here -->
             </div>
             <div class="modal-footer">
-                <button class="btn-primary" id="add-from-list-btn" style="width:100%">+ 新增此日行程</button>
+                <button class="btn-primary u-w-full" id="add-from-list-btn">+ 新增此日行程</button>
             </div>
         </div>
     </div>
@@ -131,7 +128,7 @@
             </div>
             <div class="share-preview-container">
                 <label class="input-label">內容預覽</label>
-                <textarea id="share-text-preview" readonly></textarea>
+                <textarea id="share-text-preview" readonly aria-label="分享預覽內容"></textarea>
             </div>
             <div class="share-actions">
                 <button class="social-btn btn-line" id="share-line">
@@ -148,7 +145,7 @@
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div id="loading-overlay" class="loading-overlay u-hidden">
         <div class="spinner"></div>
         <div class="loading-text">資料同步中...</div>
     </div>
