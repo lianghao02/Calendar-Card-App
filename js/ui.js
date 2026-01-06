@@ -18,12 +18,12 @@ export const DOM = {
 
 export function showLoading() {
     const overlay = DOM.loadingOverlay();
-    if(overlay) overlay.style.display = 'flex';
+    if(overlay) overlay.classList.remove('u-hidden');
 }
 
 export function hideLoading() {
     const overlay = DOM.loadingOverlay();
-    if(overlay) overlay.style.display = 'none';
+    if(overlay) overlay.classList.add('u-hidden');
 }
 
 export function switchView(view) {
