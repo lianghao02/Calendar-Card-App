@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每週日曆 | Weekly Calendar</title>
+    <title>悠樂芳行事曆 | Young Living Calendar</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <header>
         <div class="header-top">
@@ -29,7 +31,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="smart-input-container">
             <textarea id="smart-input" class="smart-input" rows="1" placeholder="💡 智慧輸入：貼上多行內容..."></textarea>
             <button id="smart-submit-btn" class="btn-send" title="送出解析">➤</button>
@@ -57,7 +59,7 @@
                     <label class="input-label">活動標題 (Title)</label>
                     <input type="text" class="input-field" id="event-input" placeholder="輸入標題 (例如：週二夜來香)...">
                 </div>
-                 <div class="input-group">
+                <div class="input-group">
                     <label class="input-label">時間 (Time)</label>
                     <input type="text" class="input-field" id="event-time" placeholder="例如：10:00, 20:00 或留空">
                 </div>
@@ -69,7 +71,8 @@
                         <option value="weekly_3_month">每週 (未來 3 個月)</option>
                         <option value="custom">自訂結束日期...</option>
                     </select>
-                    <div id="recurrence-info" style="font-size: 0.85rem; color: #6366f1; margin-top: 0.5rem; display: none;"></div>
+                    <div id="recurrence-info"
+                        style="font-size: 0.85rem; color: #6366f1; margin-top: 0.5rem; display: none;"></div>
                 </div>
                 <div class="input-group" id="recurrence-end-date-group" style="display:none;">
                     <label class="input-label">結束日期 (End Date)</label>
@@ -86,14 +89,17 @@
                 <div class="input-group">
                     <label class="input-label">相關連結 (Link)</label>
                     <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" class="input-field" id="event-link" placeholder="https://..." style="flex: 1;">
-                        <button type="button" id="open-link-btn" class="btn-primary" style="padding: 0 1rem; background-color: #6366f1;">開啟</button>
+                        <input type="text" class="input-field" id="event-link" placeholder="https://..."
+                            style="flex: 1;">
+                        <button type="button" id="open-link-btn" class="btn-primary"
+                            style="padding: 0 1rem; background-color: #6366f1;">開啟</button>
                     </div>
                 </div>
                 <input type="hidden" id="selected-date">
             </div>
             <div class="modal-footer">
-                <button class="btn-danger" id="delete-btn" style="margin-right: auto; display: none; background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">刪除</button>
+                <button class="btn-danger" id="delete-btn"
+                    style="margin-right: auto; display: none; background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">刪除</button>
                 <button class="btn-cancel" id="cancel-btn">取消</button>
                 <button class="btn-primary" id="save-btn">儲存</button>
             </div>
@@ -147,7 +153,8 @@
         <div class="loading-text">資料同步中...</div>
     </div>
 
-    <script src="api.js"></script>
-    <script src="script.js?v=1.5"></script>
+    <script src="google_api_config.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
+
 </html>

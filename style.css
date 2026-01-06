@@ -764,3 +764,20 @@ button {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Weekday Header */
+.weekday-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    background-color: transparent;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+    .weekday-header {
+        font-size: 0.8rem;
+        padding: 0.25rem;
+    }
+}
