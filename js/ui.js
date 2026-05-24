@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { HOLIDAYS_2026 } from './config.js';
-import { formatDateKey } from './utils.js';
+import { formatDateKey, escapeHTML, sanitizeLink } from './utils.js';
 // Note: Circular reference avoidance. Functions like openAddModal/editEvent are globally attached in app.js, 
 // so we can use them in HTML strings, or call them if we assume they are on window.
 // For direct calls inside JS (like selectDay -> openAddModal?), we might need to import or dispatch events.
@@ -157,12 +157,16 @@ function createDayCard(container, date, isOtherMonth) {
 
     const dayEvents = state.events[dateKey] || [];
     const eventsHtml = dayEvents.map((evt) => {
-        const timeHtml = evt.time === '全日' 
+        const safeTitle = escapeHTML(evt.title);
+        const safeTime = escapeHTML(evt.time);
+        const safeLink = sanitizeLink(evt.link);
+
+        const timeHtml = safeTime === '全日' 
             ? `<span class="event-badge all-day">全日</span>` 
-            : (evt.time ? `<span class="event-time">${evt.time}</span>` : '');
+            : (safeTime ? `<span class="event-time">${safeTime}</span>` : '');
             
-        const linkIcon = evt.link ? `<a href="${evt.link}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結">🔗</a>` : '';
-        const titleHtml = `<span class="event-title">${evt.title}</span>${linkIcon}`;
+        const linkIcon = safeLink ? `<a href="${safeLink}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結">🔗</a>` : '';
+        const titleHtml = `<span class="event-title">${safeTitle}</span>${linkIcon}`;
             
         let onClickAction = '';
         const realIndex = state.events[dateKey].indexOf(evt);
@@ -255,16 +259,22 @@ export function renderSelectedDayEvents(dateKey) {
         html += `<p style="color: var(--text-secondary); padding: 0.5rem;">無行程</p>`;
     } else {
         html += dayEvents.map((evt, index) => {
-             const timeDisplay = evt.time === '全日' ? '全日' : (evt.time || '');
-             const linkBtn = evt.link ? `<a href="${evt.link}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結" style="margin-left:8px; text-decoration:none;">🔗</a>` : '';
+             const safeTitle = escapeHTML(evt.title);
+             const safeTime = escapeHTML(evt.time);
+             const safeLocation = escapeHTML(evt.location);
+             const safeDescription = escapeHTML(evt.description);
+             const safeLink = sanitizeLink(evt.link);
+
+             const timeDisplay = safeTime === '全日' ? '全日' : (safeTime || '');
+             const linkBtn = safeLink ? `<a href="${safeLink}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結" style="margin-left:8px; text-decoration:none;">🔗</a>` : '';
              
              return `
              <div class="event-item" onclick="editEvent('${dateKey}', ${index})">
                  <div class="event-time">${timeDisplay}</div>
                  <div class="event-title">
-                    ${evt.title} ${linkBtn}
-                    ${evt.location ? `<div style="font-size:0.8em; color:gray;">📍 ${evt.location}</div>` : ''}
-                    ${evt.description ? `<div style="font-size:0.8em; color:gray; white-space:pre-wrap;">📝 ${evt.description}</div>` : ''}
+                    ${safeTitle} ${linkBtn}
+                    ${safeLocation ? `<div style="font-size:0.8em; color:gray;">📍 ${safeLocation}</div>` : ''}
+                    ${safeDescription ? `<div style="font-size:0.8em; color:gray; white-space:pre-wrap;">📝 ${safeDescription}</div>` : ''}
                  </div>
              </div>
              `;

@@ -6,7 +6,7 @@ import {
   renderSelectedDayEvents,
 } from "./ui.js";
 import { API } from "./api.js";
-import { formatDateKey } from "./utils.js";
+import { formatDateKey, escapeHTML } from "./utils.js";
 import { HOLIDAYS_2026 } from "./config.js";
 
 // DOM Cache for Modals (internal to logic)
@@ -348,16 +348,20 @@ export function openEventListModal(dateKey) {
 
   lm.container().innerHTML = dayEvents
     .map((evt, index) => {
-      const timeDisplay = evt.time === "全日" ? "全日" : evt.time || "";
+      const safeTitle = escapeHTML(evt.title);
+      const safeTime = escapeHTML(evt.time);
+      const safeLocation = escapeHTML(evt.location);
+
+      const timeDisplay = safeTime === "全日" ? "全日" : safeTime || "";
       return `
          <div class="event-item" onclick="closeEventListModal(); editEvent('${dateKey}', ${index});" style="cursor:pointer; border:1px solid #e0e7ff; margin-bottom:0.5rem; padding:0.75rem; border-radius:0.5rem; background:white;">
              <div style="font-weight:bold; color:#4f46e5; margin-bottom:0.25rem;">${timeDisplay}</div>
              <div class="event-title" style="font-size:1rem; font-weight:500;">
-                ${evt.title}
+                ${safeTitle}
              </div>
              ${
-               evt.location
-                 ? `<div style="font-size:0.85rem; color:#6b7280; margin-top:0.25rem;">📍 ${evt.location}</div>`
+               safeLocation
+                 ? `<div style="font-size:0.85rem; color:#6b7280; margin-top:0.25rem;">📍 ${safeLocation}</div>`
                  : ""
              }
          </div>
