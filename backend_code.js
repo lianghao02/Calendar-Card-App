@@ -17,7 +17,7 @@ const CONFIG = {
   API_TOKEN: "SECURE_TOKEN_5X9Y2Z_2026", 
 
   // 每日最大請求次數限制
-  MAX_DAILY_QUOTA: 5000, 
+  MAX_DAILY_QUOTA: 2500, 
   // 警告門檻 (80%)
   WARNING_THRESHOLD: 0.8,
   // 阻擋門檻 (90%)
