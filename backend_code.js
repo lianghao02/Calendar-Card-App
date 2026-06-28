@@ -14,7 +14,7 @@
 // --- 設定區 (請依需求調整) ---
 const CONFIG = {
   // ⚠️ [重要] 請確保這裡的 Token 與前端 google_api_config.js 中的 apiToken 完全一致
-  API_TOKEN: "CALENDAR_CARD_APP_2026", 
+  API_TOKEN: "SECURE_TOKEN_5X9Y2Z_2026", 
 
   // 每日最大請求次數限制
   MAX_DAILY_QUOTA: 5000, 
