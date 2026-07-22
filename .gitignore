@@ -6,3 +6,6 @@ build/
 Thumbs.db
 .vscode/
 *.log
+google_api_config.js
+config.js
+google_api_config.example.js
