@@ -10,11 +10,21 @@ const getApiToken = () => {
         : '';
 };
 
+const LOCAL_STORAGE_KEY = 'calendar_events_fallback';
+
 export const API = {
     async fetchAllEvents() {
         const url = getApiUrl();
         const token = getApiToken();
-        if (!url) throw new Error("API Configuration missing!");
+        
+        if (!url) {
+            console.warn("⚠️ 未設定雲端 API 網址，自動切換至 LocalStorage 本機單機模式。");
+            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return {
+                status: 'success',
+                data: { events: localData ? JSON.parse(localData) : {} }
+            };
+        }
         
         // Append token to URL for GET
         const fetchUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
@@ -32,7 +42,21 @@ export const API = {
     async saveDayEvents(dateKey, events) {
         const url = getApiUrl();
         const token = getApiToken();
-        if (!url) throw new Error("API Configuration missing!");
+        
+        if (!url) {
+            console.warn("⚠️ 未設定雲端 API 網址，行程已儲存至 LocalStorage 本機快取。");
+            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            const allEvents = localData ? JSON.parse(localData) : {};
+            
+            if (events && events.length > 0) {
+                allEvents[dateKey] = events;
+            } else {
+                delete allEvents[dateKey];
+            }
+            
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
+            return { status: 'success' };
+        }
 
         const payload = {
             action: 'save_day',
