@@ -165,6 +165,9 @@ export async function saveEvent() {
     link,
   };
 
+  // 1. 備份受影響的 state 狀態以利失敗時回滾 (Rollback)
+  const backupEventsState = JSON.parse(JSON.stringify(state.events));
+
   // Check if moving event (existing event + date changed)
   const isMovingEvent =
     state.editingIndex >= 0 && originalDateKey !== newDateKey;
@@ -180,25 +183,21 @@ export async function saveEvent() {
     // 2. Add to new date (Treat as new event on that day)
     if (!state.events[newDateKey]) state.events[newDateKey] = [];
     state.events[newDateKey].push(newEvent);
-
-    // Reset state for save logic below
-    // We will save BOTH originalDateKey (to remove) and newDateKey (to add)
   } else {
     // Normal Save (Add new OR Edit same day)
-    // Use newDateKey as the target (it equals originalDateKey if valid edit)
     if (!state.events[newDateKey]) state.events[newDateKey] = [];
 
     if (state.editingIndex >= 0) {
       state.events[newDateKey][state.editingIndex] = newEvent;
     } else {
-      // New Event Logic (Recurrence only applies here if not moving)
+      // New Event Logic
       const recurrence = m.recurrence() ? m.recurrence().value : "none";
 
       if (recurrence === "none") {
         state.events[newDateKey].push(newEvent);
       } else {
-        const [y, m, d] = newDateKey.split("-").map(Number);
-        let startDate = new Date(y, m - 1, d);
+        const [y, m_val, d] = newDateKey.split("-").map(Number);
+        let startDate = new Date(y, m_val - 1, d);
         let endDate = new Date(startDate);
 
         if (recurrence === "weekly_current_month") {
@@ -236,7 +235,7 @@ export async function saveEvent() {
     }
   }
 
-  // Sort events on the target date (newDateKey)
+  // Sort events on the target date
   if (state.events[newDateKey]) {
     state.events[newDateKey].sort((a, b) => {
       if (a.time === "全日") return -1;
@@ -245,15 +244,12 @@ export async function saveEvent() {
     });
   }
 
-  closeModal();
-  renderCalendar();
   showLoading();
 
   const recurrence = m.recurrence() ? m.recurrence().value : "none";
   const promises = [];
 
   if (isMovingEvent) {
-    // Save both dates
     promises.push(
       API.saveDayEvents(originalDateKey, state.events[originalDateKey] || [])
     );
@@ -261,7 +257,6 @@ export async function saveEvent() {
       API.saveDayEvents(newDateKey, state.events[newDateKey] || [])
     );
   } else if (state.editingIndex === -1 && recurrence !== "none") {
-    // Recurrence saving logic (unchanged, just use newDateKey)
     const [y, m_val, d] = newDateKey.split("-").map(Number);
     let startDate = new Date(y, m_val - 1, d);
     let endDate = new Date(startDate);
@@ -287,16 +282,23 @@ export async function saveEvent() {
       loopDate.setDate(loopDate.getDate() + 7);
     }
   } else {
-    // Normal single day save
     promises.push(
       API.saveDayEvents(newDateKey, state.events[newDateKey] || [])
     );
   }
 
   try {
+    // 執行真正 API 寫入
     await Promise.all(promises);
+
+    // ✅ 寫入成功：才關閉 Modal 視窗並重新渲染畫面
+    closeModal();
+    renderCalendar();
   } catch (err) {
-    alert("儲存失敗，請檢查網路或是 API 配額。\n" + err.message);
+    // ❌ 寫入失敗：將 state 回滾至備份狀態，保留 Modal 視窗不關閉以供重試
+    state.events = backupEventsState;
+    console.error("儲存失敗，已成功回滾 Local State:", err);
+    alert("儲存失敗，請檢查網路或是 API 配額：\n" + err.message);
   } finally {
     hideLoading();
   }
@@ -308,6 +310,8 @@ export async function deleteEvent() {
 
   if (!confirm("確定要刪除這個行程嗎？")) return;
 
+  const backupEventsState = JSON.parse(JSON.stringify(state.events));
+
   if (state.events[dateKey]) {
     state.events[dateKey].splice(state.editingIndex, 1);
     if (state.events[dateKey].length === 0) {
@@ -315,16 +319,20 @@ export async function deleteEvent() {
     }
   }
 
-  closeModal();
-  renderCalendar();
   showLoading();
 
   try {
     const eventsToSave = state.events[dateKey] || [];
     await API.saveDayEvents(dateKey, eventsToSave);
+
+    // ✅ 刪除成功：才關閉視窗並重新繪製
+    closeModal();
+    renderCalendar();
   } catch (err) {
+    // ❌ 刪除失敗：回滾 State，保持原始畫面狀態
+    state.events = backupEventsState;
+    console.error("刪除失敗，已成功回滾 Local State:", err);
     alert("刪除失敗：" + err.message);
-    // Reload recommended
   } finally {
     hideLoading();
   }

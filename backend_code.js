@@ -13,17 +13,17 @@
 
 // --- 設定區 (請依需求調整) ---
 const CONFIG = {
-  // ⚠️ [重要] 請確保這裡的 Token 與前端 google_api_config.js 中的 apiToken 完全一致
-  API_TOKEN: "", 
+  // 🔒 [資安修復] 僅從 Apps Script 的 ScriptProperties 動態讀取 API_TOKEN，嚴禁硬編碼預設 fallback
+  API_TOKEN: PropertiesService.getScriptProperties().getProperty('API_TOKEN'),
 
   // 每日最大請求次數限制
-  MAX_DAILY_QUOTA: 2500, 
+  MAX_DAILY_QUOTA: 2500,
   // 警告門檻 (80%)
   WARNING_THRESHOLD: 0.8,
   // 阻擋門檻 (90%)
   BLOCK_THRESHOLD: 0.9,
   // 資料儲存的 Sheet 名稱
-  SHEET_NAME: 'EventsData' 
+  SHEET_NAME: 'EventsData'
 };
 
 /**
