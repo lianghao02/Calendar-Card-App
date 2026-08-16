@@ -1,15 +1,15 @@
 :root {
-    /* Brand Colors - Young Living Inspired (Lavender/Nature) */
-    --primary-color: #8b5cf6; /* Violet 500 */
-    --primary-hover: #7c3aed; /* Violet 600 */
-    --primary-light: #ddd6fe; /* Violet 200 */
-    --primary-bg: #f5f3ff;    /* Violet 50 */
+    /* 莫蘭迪淺色設計系統 */
+    --primary-color: #526F94;
+    --primary-hover: #58789A;
+    --primary-light: #C8D6E3;
+    --primary-bg: #EDF2F5;
     
     /* Neutral / Glass Colors */
-    --text-primary: #1e293b;  /* Slate 800 */
-    --text-secondary: #64748b; /* Slate 500 */
-    --glass-border: rgba(255, 255, 255, 0.6);
-    --glass-surface: rgba(255, 255, 255, 0.65);
+    --text-primary: #2B364B;
+    --text-secondary: #667080;
+    --glass-border: rgba(107, 139, 176, 0.2);
+    --glass-surface: rgba(255, 255, 255, 0.85);
     --glass-highlight: rgba(255, 255, 255, 0.9);
     
     /* Functional Colors */
@@ -24,7 +24,7 @@
     
     --backdrop-blur: blur(12px);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-family: "Microsoft JhengHei", "Segoe UI", system-ui, sans-serif;
 }
 
 * {
@@ -42,8 +42,8 @@ body {
     padding: 2rem 1rem;
     
     /* Soft Elegant Gradient */
-    background-color: #f3e7e9;
-    background-image: linear-gradient(315deg, #f3e7e9 0%, #e3eeff 74%);
+    background-color: #F3F5F8;
+    background-image: linear-gradient(315deg, #F3F5F8 0%, #E8EDF3 74%);
     background-attachment: fixed;
 }
 
@@ -55,6 +55,25 @@ body {
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-sm);
 }
+
+.empty-day-state {
+    padding: 1.25rem 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+.empty-day-state svg {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 0.35rem;
+    fill: none;
+    stroke: var(--primary-color);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .8;
+}
+.empty-day-state p { margin: 0; color: var(--text-primary); font-weight: 700; }
+.empty-day-state small { display: block; margin-top: 0.3rem; }
 
 /* Header */
 header {
