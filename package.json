@@ -1,6 +1,6 @@
 {
   "name": "calendar-card-app",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Weekly Calendar Card App",
   "main": "index.html",
   "scripts": {

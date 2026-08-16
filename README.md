@@ -1,22 +1,46 @@
-# 📅 莫蘭迪卡片式行事曆 Calendar-Card-App (v1.0)
+# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.1.1
 
-[![Version](https://img.shields.io/badge/version-v1.0-blue.svg)](https://github.com/lianghao02/Calendar-Card-App)
-[![HTML5](https://img.shields.io/badge/Frontend-HTML5%2FCSS3-orange.svg)](https://w3.org)
+[![Version](https://img.shields.io/badge/version-v1.1.1-blue.svg)](CHANGELOG.md)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
-## 🏆 v1.0 里程碑：莫蘭迪配色卡片化排班月曆
+這是一套以卡片呈現月曆與活動的網頁應用程式，可在純前端本機模式使用，也可搭配 Google Apps Script 後端同步資料。
 
-## 📖 重大更新摘要 (Summary)
+## v1.1.1 更新重點
 
-本版本為莫蘭迪風格卡片化行事曆之極致視覺重構版，採用 Vanilla CSS 變數系統與響應式 Grid 排版。
+- 強化後端輸入、欄位與請求大小驗證。
+- 加入同步鎖定逾時及明確錯誤回復。
+- 修正前端日期計算、活動索引、智慧輸入及 API 錯誤處理。
 
-過往傳統行事曆工具介面冰冷刺眼、排班資訊混亂無章，無法直觀呈現警務或排班人員之輪值規律。本版透過調配莫蘭迪 (Morandi) 柔和色調與動態浮雕卡片 (Glassmorphism)，將原本繁雜的班表文字轉換為高度賞心悅目的視覺卡片，使用者可在 **1 秒內** 直覺掌握全月輪值安排。
+## 使用模式
 
-## ✨ 重點更新特色
+### 本機模式
 
-- 🎨 **莫蘭迪主題色彩引擎 (CSS Variable Design System)**：
-  - 採用 HSL 調配莫蘭迪低飽和度色彩 Token，支援平滑深色模式 (Dark Mode) 切換與高質感圓角陰影。
-  - 徹底杜絕瀏覽器預設原色帶來的視覺疲勞，提供軍規級審美體驗。
+直接開啟 `index.html` 即可使用介面。資料僅保存在目前瀏覽器可用的本機儲存空間，清除瀏覽器資料或更換裝置時不會自動同步。
 
-- 📱 **響應式卡片流體佈局 (Fluid Card Layout)**：
-  - 採用 CSS Grid 與 Flexbox 雙引擎，自動適應手機、平板與桌上型螢幕解析度。
-  - 確保行動裝置瀏覽時字體無損縮放、班表卡片絕不重疊排版。
+### Google Apps Script 模式
+
+1. 建立 Google Apps Script 專案。
+2. 依專案設定部署 `backend_code.js`。
+3. 將部署後的 Web App URL 設定到前端 API 組態。
+4. 先用非敏感測試資料確認讀寫與權限，再投入正式使用。
+
+## 開發與驗證
+
+本專案不需要前端建置步驟。可用 Node.js 檢查 JavaScript 語法：
+
+```powershell
+node --check backend_code.js
+node --check js/api.js
+node --check js/app.js
+node --check js/logic.js
+node --check js/smart-input.js
+node --check js/ui.js
+```
+
+## 限制
+
+- Google Apps Script 的權限、配額與鎖定時間會影響同步結果。
+- 本機模式不等同雲端備份；重要活動資料應另行備份。
+- 智慧輸入是規則式解析，日期與文字仍需由使用者確認。
+
+詳細異動請參閱 [CHANGELOG.md](CHANGELOG.md)。

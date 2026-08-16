@@ -132,6 +132,7 @@ export function parseSmartInput(text) {
 
 function parseDateKeyword(text) {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     let targetDate = new Date(today);
     let extractedText = text;
     let found = false;
@@ -143,25 +144,23 @@ function parseDateKeyword(text) {
     const explicitDateMatch = normText.match(/^(\d{4})?[/\-\.]?(\d{1,2})[/\-\.](\d{1,2})/);
     if (explicitDateMatch) {
         const yStr = explicitDateMatch[1];
-        const m = parseInt(explicitDateMatch[2]);
-        const d = parseInt(explicitDateMatch[3]);
+        const m = parseInt(explicitDateMatch[2], 10);
+        const d = parseInt(explicitDateMatch[3], 10);
         
-        if (yStr) {
-            targetDate.setFullYear(parseInt(yStr));
-        }
-        // Handle year wrap-around for MM/DD? (e.g. in Dec, typing 1/1 means next year)
-        // Current logic: defaults to current year if no YYYY.
+        let year = yStr ? parseInt(yStr, 10) : today.getFullYear();
         
-        targetDate.setMonth(m - 1, d);
-        
-        // Basic check for next year
-        // If today is Dec and input is Jan, probably next year.
+        // Handle year wrap-around for MM/DD (e.g. in Dec, typing 1/1 means next year)
         if (!yStr && today.getMonth() === 11 && m === 1 && today.getDate() > 15) {
-             targetDate.setFullYear(today.getFullYear() + 1);
+             year += 1;
         }
 
-        extractedText = normText.substring(explicitDateMatch[0].length).trim();
-        found = true;
+        // 防禦月份溢出 (建立臨時 Date 驗證邊界)
+        const testDate = new Date(year, m - 1, d);
+        if (testDate.getFullYear() === year && testDate.getMonth() === m - 1 && testDate.getDate() === d) {
+            targetDate = testDate;
+            extractedText = normText.substring(explicitDateMatch[0].length).trim();
+            found = true;
+        }
     }
 
     else if (normText.startsWith('明天')) {

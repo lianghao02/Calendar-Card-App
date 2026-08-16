@@ -2,13 +2,14 @@
  * ------------------------------------------------------------------
  * Google Apps Script for Calendar Card App
  * ------------------------------------------------------------------
- * 更新日期：2026-01-06
- * 更新內容：新增 API Token 安全驗證機制
+ * 更新日期：2026-08-13
+ * 更新內容：新增 API Token 安全驗證與 Lock 併發防護機制
  * 
  * 功能：
  * 1. 讀取/寫入 Google Sheet 資料
  * 2. 實作 API 流量限制 (Rate Limiting)
  * 3. 安全驗證：阻擋未帶 Token 的請求
+ * 4. 併發防護：Lock 超時 guard 與 safe release
  */
 
 // --- 設定區 (請依需求調整) ---
@@ -24,6 +25,16 @@ const CONFIG = {
   BLOCK_THRESHOLD: 0.9,
   // 資料儲存的 Sheet 名稱
   SHEET_NAME: 'EventsData'
+};
+
+const VALIDATION = {
+  MAX_PAYLOAD_LENGTH: 100000,
+  MAX_EVENTS_PER_DAY: 50,
+  MAX_TITLE_LENGTH: 200,
+  MAX_TIME_LENGTH: 20,
+  MAX_LOCATION_LENGTH: 500,
+  MAX_DESCRIPTION_LENGTH: 2000,
+  MAX_LINK_LENGTH: 2048
 };
 
 /**
@@ -55,13 +66,62 @@ function verifyToken(e) {
   return false;
 }
 
+function validateDateKey(dateKey) {
+  if (typeof dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    throw new Error('Invalid dateKey');
+  }
+
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    throw new Error('Invalid dateKey');
+  }
+}
+
+function validateEvent(event) {
+  if (!event || typeof event !== 'object' || Array.isArray(event)) {
+    throw new Error('Invalid event');
+  }
+
+  const fields = [
+    ['title', VALIDATION.MAX_TITLE_LENGTH],
+    ['time', VALIDATION.MAX_TIME_LENGTH],
+    ['location', VALIDATION.MAX_LOCATION_LENGTH],
+    ['description', VALIDATION.MAX_DESCRIPTION_LENGTH],
+    ['link', VALIDATION.MAX_LINK_LENGTH]
+  ];
+
+  fields.forEach(([field, maxLength]) => {
+    if (typeof event[field] !== 'string' || event[field].length > maxLength) {
+      throw new Error(`Invalid event ${field}`);
+    }
+  });
+}
+
+function validateSavePayload(postData) {
+  if (!postData || typeof postData !== 'object' || postData.action !== 'save_day') {
+    throw new Error('Invalid action');
+  }
+  validateDateKey(postData.dateKey);
+  if (!Array.isArray(postData.events) || postData.events.length > VALIDATION.MAX_EVENTS_PER_DAY) {
+    throw new Error('Invalid events');
+  }
+  postData.events.forEach(validateEvent);
+}
+
 /**
  * 核心請求處理函式
  */
 function handleRequest(e, method) {
   const lock = LockService.getScriptLock();
   // 嘗試取得鎖定 10秒，避免並發寫入衝突
-  lock.tryLock(10000); 
+  const hasLock = lock.tryLock(10000);
+  if (!hasLock) {
+    return createResponse({
+      status: 'error',
+      message: '伺服器忙碌中 (Lock Timeout)，請稍後再試。'
+    });
+  }
 
   try {
     // 1. 檢查流量限制
@@ -104,6 +164,9 @@ function handleRequest(e, method) {
       if (!e.postData || !e.postData.contents) {
         throw new Error('Empty POST body');
       }
+      if (e.postData.contents.length > VALIDATION.MAX_PAYLOAD_LENGTH) {
+        throw new Error('Payload too large');
+      }
 
       const postData = JSON.parse(e.postData.contents);
       
@@ -116,14 +179,15 @@ function handleRequest(e, method) {
       
       if (action === 'save_day') {
         // 儲存單日行程
+        validateSavePayload(postData);
         saveDayEvents(sheet, postData.dateKey, postData.events);
         result = { success: true };
       } else if (action === 'delete_day') {
           // 清空單日
+          validateDateKey(postData.dateKey);
           saveDayEvents(sheet, postData.dateKey, []);
           result = { success: true };
-      }
-       else {
+      } else {
         throw new Error('Unknown Action');
       }
     }
@@ -140,7 +204,9 @@ function handleRequest(e, method) {
       message: err.toString()
     });
   } finally {
-    lock.releaseLock();
+    if (hasLock) {
+      lock.releaseLock();
+    }
   }
 }
 

@@ -156,7 +156,7 @@ function createDayCard(container, date, isOtherMonth) {
     }
 
     const dayEvents = state.events[dateKey] || [];
-    const eventsHtml = dayEvents.map((evt) => {
+    const eventsHtml = dayEvents.map((evt, idx) => {
         const safeTitle = escapeHTML(evt.title);
         const safeTime = escapeHTML(evt.time);
         const safeLink = sanitizeLink(evt.link);
@@ -169,9 +169,8 @@ function createDayCard(container, date, isOtherMonth) {
         const titleHtml = `<span class="event-title">${safeTitle}</span>${linkIcon}`;
             
         let onClickAction = '';
-        const realIndex = state.events[dateKey].indexOf(evt);
         if (!state.isSelectionMode) {
-            onClickAction = `editEvent('${dateKey}', ${realIndex})`;
+            onClickAction = `editEvent('${dateKey}', ${idx})`;
         }
             
         return `
@@ -247,7 +246,8 @@ export function renderSelectedDayEvents(dateKey) {
     
     if (!container) return;
     
-    const dateObj = new Date(dateKey);
+    const [y, m_val, d_val] = dateKey.split('-').map(Number);
+    const dateObj = new Date(y, m_val - 1, d_val);
     const m = dateObj.getMonth() + 1;
     const d = dateObj.getDate();
     const dayNames = ['日', '一', '二', '三', '四', '五', '六'];

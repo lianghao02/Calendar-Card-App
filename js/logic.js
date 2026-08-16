@@ -18,7 +18,6 @@ const MODAL = {
   inputLocation: () => document.getElementById("event-location"),
   inputDesc: () => document.getElementById("event-description"),
   inputLink: () => document.getElementById("event-link"),
-  inputLink: () => document.getElementById("event-link"),
   inputDate: () => document.getElementById("selected-date"), // Hidden: Original Date
   inputDatePicker: () => document.getElementById("event-date-picker"), // Visible: New Date
   saveBtn: () => document.getElementById("save-btn"),
@@ -214,8 +213,12 @@ export async function saveEvent() {
           );
         } else if (recurrence === "custom") {
           const customEnd = m.recurrenceEnd().value;
-          if (customEnd) endDate = new Date(customEnd);
-          else endDate = startDate;
+          if (customEnd && /^\d{4}-\d{2}-\d{2}$/.test(customEnd)) {
+            const [ey, em, ed] = customEnd.split("-").map(Number);
+            endDate = new Date(ey, em - 1, ed);
+          } else {
+            endDate = startDate;
+          }
         }
 
         let loopDate = new Date(startDate);

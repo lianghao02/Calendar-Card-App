@@ -41,6 +41,7 @@ async function initApp() {
         }
     } catch (err) {
         console.error(err);
+        state.events = state.events || {};
         alert('無法讀取雲端資料，將暫時顯示空白日曆。\n錯誤：' + err.message);
     } finally {
         hideLoading();

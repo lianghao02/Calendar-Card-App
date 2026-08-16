@@ -12,6 +12,16 @@ const getApiToken = () => {
 
 const LOCAL_STORAGE_KEY = 'calendar_events_fallback';
 
+function ensureApiSuccess(data, fallbackMessage) {
+    if (!data || typeof data !== 'object') {
+        throw new Error(fallbackMessage);
+    }
+    if (data.status === 'error') {
+        throw new Error(data.message || fallbackMessage);
+    }
+    return data;
+}
+
 /**
  * 解析 LocalStorage 資料。
  * 若 LocalStorage 存在非空字串但 JSON 解析失敗（資料損毀），
@@ -41,11 +51,19 @@ export const API = {
 
         if (!url) {
             console.warn("⚠️ 未設定雲端 API 網址，自動切換至 LocalStorage 本機單機模式。");
-            const events = parseLocalStorageEvents();
-            return {
-                status: 'success',
-                data: { events: events }
-            };
+            try {
+                const events = parseLocalStorageEvents();
+                return {
+                    status: 'success',
+                    data: { events: events }
+                };
+            } catch (err) {
+                console.error("單機模式 LocalStorage 讀取失敗，降級顯示空白日曆:", err);
+                return {
+                    status: 'success',
+                    data: { events: {} }
+                };
+            }
         }
 
         // Append token to URL for GET
@@ -57,7 +75,7 @@ export const API = {
                 throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
             }
             const data = await response.json();
-            return data;
+            return ensureApiSuccess(data, 'API 讀取失敗');
         } catch (error) {
             console.error('API Fetch Error:', error);
             throw error;
@@ -110,10 +128,7 @@ export const API = {
             }
 
             const data = await response.json();
-            if (data.status === 'error') {
-                throw new Error(data.message || 'API 儲存失敗');
-            }
-            return data;
+            return ensureApiSuccess(data, 'API 儲存失敗');
         } catch (error) {
             console.error('API Save Error:', error);
             throw error;
