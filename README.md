@@ -20,7 +20,7 @@
 ### Google Apps Script 模式
 
 1. 建立 Google Apps Script 專案。
-2. 依專案設定部署 `backend_code.js`。
+2. 依專案設定部署 `apps-script/backend_code.js`。
 3. 將部署後的 Web App URL 設定到前端 API 組態。
 4. 先用非敏感測試資料確認讀寫與權限，再投入正式使用。
 
@@ -29,7 +29,7 @@
 本專案不需要前端建置步驟。可用 Node.js 檢查 JavaScript 語法：
 
 ```powershell
-node --check backend_code.js
+node --check apps-script/backend_code.js
 node --check js/api.js
 node --check js/app.js
 node --check js/logic.js
