@@ -1,11 +1,20 @@
-# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.1.1
+# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.1.2
 
-[![Version](https://img.shields.io/badge/version-v1.1.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.1.2-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
 這是一套以卡片呈現月曆與活動的網頁應用程式，可在純前端本機模式使用，也可搭配 Google Apps Script 後端同步資料。
 
-## v1.1.1 更新重點
+## 下載、依賴與啟動
+
+- **一般使用**：下載 ZIP 並解壓。因前端使用 ES Modules，建議在資料夾執行 `py -m http.server 8000`，再開啟 `http://127.0.0.1:8000/`。
+- **執行依賴**：現代瀏覽器；Google Fonts 由 CDN 載入。本機月曆功能不需要 npm 套件，Python 只用來啟動簡易靜態伺服器。
+- **本機資料**：活動保存在瀏覽器儲存空間；`google_api_config.js` 只放公開部署 URL，不可放密碼、Token 或其他機密。
+- **雲端同步**：選用 Google Apps Script 時，另部署 `apps-script/backend_code.js`，再從 `google_api_config.example.js` 建立本機設定檔。
+- **打包／部署**：不需編譯；完整上傳 `index.html`、`css/`、`js/` 及必要設定檔至 GitHub Pages 或其他 HTTPS 靜態空間。
+- **開發檢查**：已安裝 Node.js 時可執行 `npm test`；`package.json` 沒有執行期套件。
+
+## v1.1.2 更新重點
 
 - 強化後端輸入、欄位與請求大小驗證。
 - 加入同步鎖定逾時及明確錯誤回復。
@@ -15,7 +24,7 @@
 
 ### 本機模式
 
-直接開啟 `index.html` 即可使用介面。資料僅保存在目前瀏覽器可用的本機儲存空間，清除瀏覽器資料或更換裝置時不會自動同步。
+透過本機靜態伺服器開啟介面。資料僅保存在目前瀏覽器可用的本機儲存空間，清除瀏覽器資料或更換裝置時不會自動同步。
 
 ### Google Apps Script 模式
 

@@ -1,10 +1,11 @@
 {
   "name": "calendar-card-app",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Weekly Calendar Card App",
   "main": "index.html",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node --check apps-script/backend_code.js && node --check js/api.js && node --check js/app.js && node --check js/logic.js && node --check js/smart-input.js && node --check js/ui.js",
+    "test": "npm run check"
   },
   "keywords": [],
   "author": "",
