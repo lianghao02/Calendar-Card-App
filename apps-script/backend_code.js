@@ -56,14 +56,18 @@ function doPost(e) {
   return handleRequest(e, 'POST');
 }
 
+function getScriptApiToken() {
+  return (PropertiesService.getScriptProperties().getProperty('API_TOKEN') || '').trim();
+}
+
 /**
  * 驗證 GET 請求的參數
  */
 function verifyToken(e) {
-  if (e && e.parameter && e.parameter.token === CONFIG.API_TOKEN) {
-    return true;
-  }
-  return false;
+  const configuredToken = getScriptApiToken();
+  if (!configuredToken) return false;
+  const incomingToken = (e && e.parameter && e.parameter.token) ? String(e.parameter.token).trim() : '';
+  return incomingToken === configuredToken;
 }
 
 function validateDateKey(dateKey) {
@@ -171,7 +175,8 @@ function handleRequest(e, method) {
       const postData = JSON.parse(e.postData.contents);
       
       // 🔒 POST 安全檢查：驗證 JSON Payload 內的 apiToken
-      if (postData.apiToken !== CONFIG.API_TOKEN) {
+      const configuredToken = getScriptApiToken();
+      if (!configuredToken || String(postData.apiToken || '').trim() !== configuredToken) {
          return createError('403 Forbidden: Invalid Token in Payload');
       }
 
