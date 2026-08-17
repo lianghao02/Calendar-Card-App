@@ -9,3 +9,5 @@ Thumbs.db
 # google_api_config.js
 config.js
 google_api_config.example.js
+python_embed/
+python-embed/
