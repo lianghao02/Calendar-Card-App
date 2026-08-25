@@ -1,5 +1,9 @@
 # 莫蘭迪卡片式行事曆 Calendar-Card-App v1.1.2
 
+## 技術架構現況（2026-08-24）
+
+本專案主力為 **HTML5／CSS／ES2020 JavaScript**；雲端同步為選用的 Google Apps Script，Python 只用於本機靜態伺服器。現階段維持免建置網站，若需安裝與離線能力優先導入 PWA，不進行語言遷移。
+
 [![Version](https://img.shields.io/badge/version-v1.1.2-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
@@ -7,7 +11,7 @@
 
 ## 下載、依賴與啟動
 
-- **一般使用**：下載 ZIP 並解壓。因前端使用 ES Modules，建議在資料夾執行 `py -m http.server 8000`，再開啟 `http://127.0.0.1:8000/`。
+- **一般使用**：下載 ZIP 並解壓後雙擊 `RUN.bat`。因前端使用 ES Modules，啟動器會在 `127.0.0.1:8000` 開啟本機靜態伺服器；也可手動執行 `py -3 -m http.server 8000 --bind 127.0.0.1`。
 - **執行依賴**：現代瀏覽器；Google Fonts 由 CDN 載入。本機月曆功能不需要 npm 套件，Python 只用來啟動簡易靜態伺服器。
 - **本機資料**：活動保存在瀏覽器儲存空間；`google_api_config.js` 只放公開部署 URL，不可放密碼、Token 或其他機密。
 - **雲端同步**：選用 Google Apps Script 時，另部署 `apps-script/backend_code.js`，再從 `google_api_config.example.js` 建立本機設定檔。
