@@ -1,6 +1,9 @@
+import { visibleRange, moveCalendarDate } from './calendar-data.js';
+import { setupDialogs } from './dialogs.js';
+import { setupFamilyControls, setSyncStatus } from './family-controls.js';
 import { state } from './state.js';
 import { API } from './api.js';
-import { normalizeEventKeys, formatDateKey } from './utils.js';
+import { formatDateKey, sanitizeLink } from './utils.js';
 import { 
     renderCalendar, showLoading, hideLoading, updateHeaderDate, switchView, 
     toggleSelectionMode, selectDay, DOM 
@@ -24,25 +27,28 @@ window.shareSpecificDay = shareSpecificDay;
 
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
+    setupFamilyControls();
+    setupDialogs({ 'event-modal': closeModal, 'share-modal-overlay': closeShareModal, 'event-list-modal-overlay': closeEventListModal });
     initApp();
+    window.addEventListener("calendar-view-change", refreshCalendarRange);
     setupEventListeners();
+    window.matchMedia('(max-width: 640px)').addEventListener('change', renderCalendar);
 });
 
 async function initApp() {
     showLoading();
     try {
-        const response = await API.fetchAllEvents();
-        if (response && response.data && response.data.events) {
-            state.events = normalizeEventKeys(response.data.events);
-        }
-        
-        if (response && response.quota) {
-            checkQuotaLimit(response.quota);
-        }
+        const result = await API.initialize(events => {
+            state.events = events;
+            renderCalendar();
+        }, setSyncStatus);
+        if (result?.quota) checkQuotaLimit(result.quota);
+        refreshCalendarRange();
     } catch (err) {
         console.error(err);
         state.events = state.events || {};
-        alert('無法讀取雲端資料，將暫時顯示空白日曆。\n錯誤：' + err.message);
+        setSyncStatus('讀取失敗：' + err.message);
+        alert('讀取失敗，未覆寫原資料。\n錯誤：' + err.message);
     } finally {
         hideLoading();
         renderCalendar();
@@ -63,8 +69,11 @@ function setupEventListeners() {
     document.getElementById('next-btn').addEventListener('click', () => changeDate(1));
     document.getElementById('today-btn').addEventListener('click', () => {
         state.currentDate = new Date();
+        state.activeSplitDate = formatDateKey(state.currentDate);
+        refreshCalendarRange();
         renderCalendar();
     });
+    document.getElementById('add-event-btn').addEventListener('click', () => openAddModal(state.activeSplitDate || formatDateKey(state.currentDate)));
     
     // Share
     document.getElementById('share-btn').addEventListener('click', () => {
@@ -108,9 +117,9 @@ function setupEventListeners() {
              updateRecurrenceInfo();          
              const group = document.getElementById('recurrence-end-date-group');
              if (recInput.value === 'custom') {
-                 group.style.display = 'block';
+                 group.hidden = false;
              } else {
-                 group.style.display = 'none';
+                 group.hidden = true;
              }
         });
     }
@@ -119,9 +128,9 @@ function setupEventListeners() {
     const openLinkBtn = document.getElementById('open-link-btn');
     if (openLinkBtn) {
         openLinkBtn.addEventListener('click', () => {
-             const url = document.getElementById('event-link').value.trim();
-             if (url) window.open(url, '_blank');
-             else alert('請先輸入網址');
+             const url = sanitizeLink(document.getElementById('event-link').value.trim());
+             if (url) window.open(url, '_blank', 'noopener,noreferrer');
+             else alert('請輸入有效的 HTTP 或 HTTPS 網址');
         });
     }
 
@@ -189,19 +198,23 @@ function processSmartInput(inputEl) {
     }
 
     const dateKey = formatDateKey(result.date);
-    state.currentDate = new Date(result.date); 
+    state.currentDate = new Date(result.date);
+    state.activeSplitDate = dateKey;
+    refreshCalendarRange();
     renderCalendar(); 
     
     openAddModal(dateKey, result.data);
     inputEl.value = '';
 }
 
+function refreshCalendarRange() {
+    API.watchRange(visibleRange(state.currentDate, state.currentView));
+}
+
 function changeDate(direction) {
-    if (state.currentView === 'week') {
-        state.currentDate.setDate(state.currentDate.getDate() + (direction * 7));
-    } else {
-        state.currentDate.setMonth(state.currentDate.getMonth() + direction);
-    }
+    state.currentDate = moveCalendarDate(state.currentDate, state.currentView, direction);
+    state.activeSplitDate = formatDateKey(state.currentDate);
+    refreshCalendarRange();
     renderCalendar();
 }
 

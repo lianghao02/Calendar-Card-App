@@ -6,8 +6,13 @@ build/
 Thumbs.db
 .vscode/
 *.log
-# google_api_config.js
+google_api_config.js
 config.js
-google_api_config.example.js
+!google_api_config.example.js
 python_embed/
 python-embed/
+
+.cache/
+.firebase/
+firebase.local.json
+firebase.auth.local.json

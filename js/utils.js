@@ -10,7 +10,7 @@ export function normalizeEventKeys(rawEvents) {
     for (const [key, value] of Object.entries(rawEvents)) {
         // Check if key is already YYYY-MM-DD
         if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
-            normalized[key] = value;
+            normalized[key] = Array.isArray(normalized[key]) && Array.isArray(value) ? normalized[key].concat(value) : value;
         } else {
             // Try to parse date string
             const d = new Date(key);
@@ -19,7 +19,7 @@ export function normalizeEventKeys(rawEvents) {
                 const m = String(d.getMonth() + 1).padStart(2, '0');
                 const date = String(d.getDate()).padStart(2, '0');
                 const newKey = `${y}-${m}-${date}`;
-                normalized[newKey] = value;
+                normalized[newKey] = Array.isArray(normalized[newKey]) && Array.isArray(value) ? normalized[newKey].concat(value) : value;
             } else {
                  normalized[key] = value;
             }

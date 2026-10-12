@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function authenticated() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true;
+    }
+    function member(familyId) {
+      return authenticated()
+        && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.active == true;
+    }
+    function validEvent(data) {
+      return data.keys().hasAll(['title', 'time', 'location', 'description', 'link', 'date', 'revision', 'updatedBy', 'updatedByName', 'updatedAt'])
+        && data.keys().hasOnly(['title', 'time', 'location', 'description', 'link', 'date', 'revision', 'updatedBy', 'updatedByName', 'updatedAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.time is string && data.time.size() <= 20
+        && data.location is string && data.location.size() <= 500
+        && data.description is string && data.description.size() <= 2000
+        && data.link is string && data.link.size() <= 2048
+        && (data.link == '' || data.link.matches('https?://[^ ]+'))
+        && data.date is string && data.date.matches('[1-9][0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])')
+        && data.revision is int && data.revision > 0
+        && data.updatedByName is string && data.updatedByName.size() <= 100
+        && data.updatedBy == request.auth.uid && data.updatedAt == request.time;
+    }
+    match /families/{familyId}/members/{uid} {
+      allow get: if authenticated() && request.auth.uid == uid;
+      // 成員只能由可信管理端設定，禁止自行加入、列舉或更改權限。
+      allow list, write: if false;
+    }
+    match /families/{familyId}/events/{eventId} {
+      allow read: if member(familyId);
+      allow create: if member(familyId) && validEvent(request.resource.data) && request.resource.data.revision == 1;
+      allow update: if member(familyId) && validEvent(request.resource.data)
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if member(familyId);
+    }
+  }
+}

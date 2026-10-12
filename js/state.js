@@ -5,5 +5,8 @@ export const state = {
     selectedDates: new Set(),
     currentView: 'month',
     editingIndex: -1,
+    editingEvent: null,
+    saving: false,
+    canEdit: false,
     activeSplitDate: null
 };

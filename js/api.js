@@ -1,172 +1,56 @@
-const getApiUrl = () => {
-    return (typeof window.GOOGLE_API_CONFIG !== 'undefined' && window.GOOGLE_API_CONFIG.apiUrl)
-        ? window.GOOGLE_API_CONFIG.apiUrl
-        : '';
-};
-
-const getApiToken = () => {
-    return (typeof window.GOOGLE_API_CONFIG !== 'undefined' && window.GOOGLE_API_CONFIG.apiToken)
-        ? window.GOOGLE_API_CONFIG.apiToken
-        : '';
-};
-
-const LOCAL_STORAGE_KEY = 'calendar_events_fallback';
-
-function ensureApiSuccess(data, fallbackMessage) {
-    if (!data || typeof data !== 'object') {
-        throw new Error(fallbackMessage);
-    }
-    if (data.status === 'error') {
-        throw new Error(data.message || fallbackMessage);
-    }
-    return data;
-}
-
-/**
- * 解析 LocalStorage 資料。
- * 若 LocalStorage 存在非空字串但 JSON 解析失敗（資料損毀），
- * 必須明確拋出 Error 並停止寫入，防止空物件覆寫損毀資料，保留手動救援機會。
- */
-function parseLocalStorageEvents() {
-    const rawData = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (rawData === null || rawData.trim() === '') {
-        return {};
-    }
-    try {
-        const parsed = JSON.parse(rawData);
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            return parsed;
-        }
-        throw new Error("LocalStorage 資料結構無效");
-    } catch (e) {
-        console.error("LocalStorage 資料損毀:", e);
-        throw new Error("LocalStorage 資料損毀，停止寫入以保護原始紀錄: " + e.message);
-    }
-}
+import { API as legacy } from './legacy-api.js';
+import * as cloud from './firebase-calendar.js';
+import { normalizeEvents, flattenEvents, groupEvents, assertRevision, cleanEvent } from './calendar-data.js';
+import { normalizeEventKeys } from './utils.js';
 
 export const API = {
+    get isCloud() { return cloud.cloudEnabled(); },
+    get loginReady() { return cloud.loginReady(); },
     async fetchAllEvents() {
-        const url = getApiUrl();
-        const token = getApiToken();
-
-        if (!url || !token) {
-            if (!url) {
-                console.warn("⚠️ 未設定雲端 API 網址，自動切換至 LocalStorage 本機單機模式。");
-            } else {
-                console.warn("⚠️ 未設定 API Token，自動切換至 LocalStorage 本機單機模式。");
-            }
-            try {
-                const events = parseLocalStorageEvents();
-                return {
-                    status: 'success',
-                    data: { events: events },
-                    isFallback: true
-                };
-            } catch (err) {
-                console.error("單機模式 LocalStorage 讀取失敗，降級顯示空白日曆:", err);
-                return {
-                    status: 'success',
-                    data: { events: {} },
-                    isFallback: true
-                };
-            }
-        }
-
-        // Append token to URL for GET
-        const fetchUrl = `${url}?token=${encodeURIComponent(token)}`;
-
-        try {
-            const response = await fetch(fetchUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
-            }
-            const data = await response.json();
-            return ensureApiSuccess(data, 'API 讀取失敗');
-        } catch (error) {
-            console.error('API Fetch Error:', error);
-            // 🔒 當 API 發生 403 Token 錯誤時，自動降級切換至 LocalStorage 單機模式
-            if (error.message && error.message.includes('403')) {
-                console.warn('⚠️ 雲端 Token 驗證失敗 (403 Forbidden)，自動降級至 LocalStorage 單機模式。');
-                try {
-                    const fallbackEvents = parseLocalStorageEvents();
-                    return {
-                        status: 'success',
-                        data: { events: fallbackEvents },
-                        isFallback: true
-                    };
-                } catch (fallbackErr) {
-                    return { status: 'success', data: { events: {} }, isFallback: true };
-                }
-            }
-            throw error;
-        }
+        if (this.isCloud) return { data: { events: await cloud.readAll() } };
+        const result = await legacy.fetchAllEvents();
+        result.data.events = normalizeEvents(normalizeEventKeys(result.data.events), { strictLink: false });
+        return result;
     },
-
-    async saveDayEvents(dateKey, events) {
-        const url = getApiUrl();
-        const token = getApiToken();
-
-        if (!url || !token) {
-            console.warn("⚠️ 未設定雲端 API 網址或 Token，行程已儲存至 LocalStorage 本機快取。");
-            // 讀取既有 LocalStorage，若已損毀則 parseLocalStorageEvents 會拋錯並中斷執行，不覆寫壞資料
-            const allEvents = parseLocalStorageEvents();
-
-            if (Array.isArray(events) && events.length > 0) {
-                allEvents[dateKey] = events;
-            } else {
-                delete allEvents[dateKey];
-            }
-
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
-            } catch (storageErr) {
-                console.error("LocalStorage 寫入失敗:", storageErr);
-                throw new Error("本機儲存空間已滿或寫入失敗");
-            }
-            return { status: 'success', isFallback: true };
+    async initialize(onData, onStatus) {
+        if (this.isCloud) return cloud.initializeCloud(onData, onStatus);
+        const result = await this.fetchAllEvents();
+        onData(result.data.events);
+        onStatus(result.isFallback ? '本機模式：僅存於此瀏覽器，請先匯出備份' : '舊版 GAS 模式：請先匯出備份');
+        return result;
+    },
+    watchRange(range) { if (this.isCloud) cloud.watchRange(range); },
+    async commitChanges(changes) {
+        if (this.isCloud) return cloud.commitChanges(changes);
+        const result = await this.fetchAllEvents();
+        const rows = new Map(flattenEvents(result.data.events).map(event => [event.id, event]));
+        const dates = new Set();
+        for (const change of changes) {
+            if (change.before) {
+                const current = rows.get(change.id);
+                assertRevision(current, change.before.revision);
+                if (JSON.stringify({ date: current.date, ...cleanEvent(current, { strictLink: false }) }) !== JSON.stringify({ date: change.before.date, ...cleanEvent(change.before, { strictLink: false }) })) throw new Error('原行程已變更，請重新讀取後再確認');
+                dates.add(change.before.date);
+            } else if (rows.has(change.id)) throw new Error('行程識別碼已存在');
+            if (change.after) { rows.set(change.id, { ...change.after, id: change.id, revision: (change.before?.revision || 0) + 1 }); dates.add(change.after.date); }
+            else rows.delete(change.id);
         }
-
-        const payload = {
-            action: 'save_day',
-            dateKey: dateKey,
-            events: events,
-            apiToken: token // Send token in body for POST
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                mode: 'cors', // Specific for GAS to handle Simple Requests
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8' // Standard for GAS
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`伺服器回應錯誤! 狀態碼: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return ensureApiSuccess(data, 'API 儲存失敗');
-        } catch (error) {
-            console.error('API Save Error:', error);
-            if (error.message && error.message.includes('403')) {
-                console.warn('⚠️ 雲端 Token 驗證失敗 (403)，自動改將行程儲存至 LocalStorage 本機快取。');
-                try {
-                    const allEvents = parseLocalStorageEvents();
-                    if (Array.isArray(events) && events.length > 0) {
-                        allEvents[dateKey] = events;
-                    } else {
-                        delete allEvents[dateKey];
-                    }
-                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
-                    return { status: 'success', isFallback: true };
-                } catch (fallbackErr) {
-                    throw new Error("本機儲存空間已滿或寫入失敗");
-                }
-            }
-            throw error;
-        }
-    }
+        const grouped = groupEvents([...rows.values()]);
+        // 舊服務仍為逐日寫入；正式 Firebase 版使用單一交易。
+        for (const date of dates) await legacy.saveDayEvents(date, grouped[date] || []);
+        return grouped;
+    },
+    async readLocalBackup() {
+        const text = localStorage.getItem('calendar_events_fallback');
+        if (text === null) return {};
+        return normalizeEvents(normalizeEventKeys(JSON.parse(text)), { strictLink: false });
+    },
+    async readLegacyBackup() {
+        const result = await legacy.fetchAllEvents();
+        return { events: normalizeEvents(normalizeEventKeys(result.data.events), { strictLink: false }), source: result.isFallback ? 'local' : 'gas' };
+    },
+    importEntries: cloud.importEntries,
+    signIn: cloud.signIn,
+    signOut: cloud.signOut,
+    currentAccount: cloud.currentAccount,
 };

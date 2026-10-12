@@ -1,3 +1,4 @@
+import { refreshSyncSummary } from './family-controls.js';
 import { state } from './state.js';
 import { HOLIDAYS_2026 } from './config.js';
 import { formatDateKey, escapeHTML, sanitizeLink } from './utils.js';
@@ -28,6 +29,7 @@ export function hideLoading() {
 
 export function switchView(view) {
     state.currentView = view;
+    window.dispatchEvent(new Event("calendar-view-change"));
     if (view === 'week') {
         DOM.viewWeekBtn().classList.add('active');
         DOM.viewMonthBtn().classList.remove('active');
@@ -65,22 +67,31 @@ export function updateHeaderDate(date = state.currentDate, type = state.currentV
 export function renderCalendar() {
     const grid = DOM.calendarGrid();
     grid.innerHTML = '';
+    if (!state.activeSplitDate) state.activeSplitDate = formatDateKey(state.currentDate);
+    DOM.viewWeekBtn().setAttribute('aria-pressed', String(state.currentView === 'week'));
+    DOM.viewMonthBtn().setAttribute('aria-pressed', String(state.currentView === 'month'));
+    DOM.selectModeBtn().setAttribute('aria-pressed', String(state.isSelectionMode));
+    document.getElementById('selected-date-label').textContent = state.isSelectionMode ? '已選 ' + state.selectedDates.size + ' 天，選好後按分享' : '新增日期：' + state.activeSplitDate.replaceAll('-', '/');
+    document.getElementById('add-event-btn').disabled = !state.canEdit || state.saving || state.isSelectionMode;
+    document.getElementById('share-btn').disabled = !state.canEdit || (state.isSelectionMode && !state.selectedDates.size);
+    document.getElementById('select-mode-btn').disabled = !state.canEdit;
+    refreshSyncSummary();
     
     if (state.currentView === 'week') {
         grid.className = 'calendar-container view-week';
         renderWeekView(grid);
         const splitContainer = DOM.selectedDayEvents();
-        if (splitContainer) splitContainer.style.display = 'none';
+        if (splitContainer) splitContainer.hidden = true;
     } else {
         grid.className = 'calendar-container view-month';
         renderMonthView(grid);
         
-        if (window.innerWidth <= 640) {
+        if (window.innerWidth <= 640 && !state.isSelectionMode) {
             if (!state.activeSplitDate) {
                 state.activeSplitDate = formatDateKey(state.currentDate);
             }
             renderSelectedDayEvents(state.activeSplitDate);
-        }
+        } else { DOM.selectedDayEvents().hidden = true; }
     }
 }
 
@@ -137,12 +148,13 @@ function createDayCard(container, date, isOtherMonth) {
     const dayCard = document.createElement('div');
     dayCard.classList.add('day-card');
     if (isOtherMonth) dayCard.classList.add('other-month');
+    if (dateKey === formatDateKey(new Date())) dayCard.classList.add('current-day');
     
     if (state.isSelectionMode) {
         if (state.selectedDates.has(dateKey)) {
             dayCard.classList.add('selected-day');
-            dayCard.style.border = '2px solid #6366f1';
-            dayCard.style.backgroundColor = '#eef2ff';
+            dayCard.style.border = '2px solid var(--primary-color)';
+            dayCard.style.backgroundColor = 'var(--primary-bg)';
         }
     }
 
@@ -165,8 +177,8 @@ function createDayCard(container, date, isOtherMonth) {
             ? `<span class="event-badge all-day">全日</span>` 
             : (safeTime ? `<span class="event-time">${safeTime}</span>` : '');
             
-        const linkIcon = safeLink ? `<a href="${safeLink}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結">🔗</a>` : '';
-        const titleHtml = `<span class="event-title">${safeTitle}</span>${linkIcon}`;
+        const linkIcon = safeLink ? `<a href="${safeLink}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" rel="noopener noreferrer" title="開啟連結">🔗</a>` : '';
+        const titleHtml = `<span class="event-title">${safeTitle}</span>`;
             
         let onClickAction = '';
         if (!state.isSelectionMode) {
@@ -174,10 +186,7 @@ function createDayCard(container, date, isOtherMonth) {
         }
             
         return `
-        <div class="event-item" onclick="${onClickAction}; event && event.stopPropagation();">
-            ${timeHtml}
-            ${titleHtml}
-        </div>
+        <div class="event-item"><button type="button" class="event-edit-btn" ${!state.canEdit ? 'disabled' : ''} onclick="${onClickAction}; event.stopPropagation();">${timeHtml}${titleHtml}</button>${linkIcon}</div>
         `;
     }).join('');
 
@@ -190,20 +199,21 @@ function createDayCard(container, date, isOtherMonth) {
         <div class="day-header">
             <div class="day-header-top">
                 <div class="day-name">${dayNames[date.getDay()]}</div>
-                <button class="btn-icon-sm share-day-btn" onclick="shareSpecificDay('${dateKey}')" title="分享此日行程">📤</button>
+                <button class="btn-icon-sm share-day-btn" onclick="shareSpecificDay('${dateKey}'); event.stopPropagation();" title="分享此日行程">📤</button>
             </div>
-            <div class="day-date">${date.getDate()}</div>
+            <button type="button" class="day-date date-select-btn" id="day-${dateKey}" aria-label="${date.getMonth() + 1}月${date.getDate()}日，${dayEvents.length}筆行程" aria-pressed="${state.isSelectionMode ? state.selectedDates.has(dateKey) : state.activeSplitDate === dateKey}">${date.getDate()}</button>
             ${holidayLabel}
             ${dotsHtml}
         </div>
         <div class="events-container">
             ${eventsHtml}
         </div>
-        <button class="add-event-btn" onclick="openAddModal('${dateKey}')">+ 新增</button>
+        <button type="button" class="add-event-btn" ${!state.canEdit ? 'disabled' : ''} onclick="openAddModal('${dateKey}')">+ 新增</button>
     `;
     
     dayCard.onclick = (e) => {
-        if (window.innerWidth <= 640 && state.currentView === 'month' && !state.isSelectionMode) {
+        if (e.target.closest('button, a') && !e.target.closest('.date-select-btn')) return;
+        if (!state.isSelectionMode && (state.currentView === 'month' || e.target.closest('.date-select-btn'))) {
              selectDay(dateKey); 
              // Mobile Split View: Just select, don't open modal immediately.
              return;
@@ -237,7 +247,7 @@ function createDayCard(container, date, isOtherMonth) {
 export function selectDay(dateKey) {
     state.activeSplitDate = dateKey;
     renderCalendar();
-    renderSelectedDayEvents(dateKey);
+    document.getElementById('day-' + dateKey)?.focus({ preventScroll: true });
 }
 
 export function renderSelectedDayEvents(dateKey) {
@@ -259,40 +269,30 @@ export function renderSelectedDayEvents(dateKey) {
         html += `<div class="empty-day-state"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="13" y="16" width="38" height="35" rx="7"/><path d="M21 11v10m22-10v10M21 30h22m-15 9h8"/></svg><p>無行程</p><small>可使用上方智慧輸入快速新增安排</small></div>`;
     } else {
         html += dayEvents.map((evt, index) => {
-             const safeTitle = escapeHTML(evt.title);
-             const safeTime = escapeHTML(evt.time);
-             const safeLocation = escapeHTML(evt.location);
-             const safeDescription = escapeHTML(evt.description);
-             const safeLink = sanitizeLink(evt.link);
-
-             const timeDisplay = safeTime === '全日' ? '全日' : (safeTime || '');
-             const linkBtn = safeLink ? `<a href="${safeLink}" target="_blank" class="event-link-icon" onclick="event.stopPropagation()" title="開啟連結" style="margin-left:8px; text-decoration:none;">🔗</a>` : '';
-             
-             return `
-             <div class="event-item" onclick="editEvent('${dateKey}', ${index})">
-                 <div class="event-time">${timeDisplay}</div>
-                 <div class="event-title">
-                    ${safeTitle} ${linkBtn}
-                    ${safeLocation ? `<div style="font-size:0.8em; color:gray;">📍 ${safeLocation}</div>` : ''}
-                    ${safeDescription ? `<div style="font-size:0.8em; color:gray; white-space:pre-wrap;">📝 ${safeDescription}</div>` : ''}
-                 </div>
-             </div>
-             `;
+            const link = sanitizeLink(evt.link);
+            const linkButton = link ? '<a href="' + link + '" target="_blank" rel="noopener noreferrer" class="event-link-icon" title="開啟行程連結">🔗</a>' : '';
+            return '<div class="event-item"><button type="button" class="event-edit-btn" ' + (!state.canEdit ? 'disabled' : '') + ' onclick="editEvent(\'' + dateKey + '\', ' + index + ')">' +
+                '<span class="event-time">' + escapeHTML(evt.time || '全日') + '</span><span class="event-title">' + escapeHTML(evt.title) +
+                (evt.location ? '<span class="event-detail">地點：' + escapeHTML(evt.location) + '</span>' : '') +
+                (evt.description ? '<span class="event-detail">備註：' + escapeHTML(evt.description) + '</span>' : '') + '</span></button>' + linkButton + '</div>';
         }).join('');
     }
     
-    html += `<button class="add-event-btn" onclick="openAddModal('${dateKey}')" style="margin-top:1rem;">+ 新增此日行程</button>`;
+    html += `<button type="button" class="add-event-btn" ${!state.canEdit ? 'disabled' : ''} onclick="openAddModal('${dateKey}')" style="margin-top:1rem;">+ 新增此日行程</button>`;
     
     container.innerHTML = html;
+    container.hidden = false;
+    container.style.removeProperty('display');
     container.classList.add('active');
 }
 
 export function toggleSelectionMode() {
+    if (!state.canEdit) return;
     state.isSelectionMode = !state.isSelectionMode;
     const btn = DOM.selectModeBtn();
     if (state.isSelectionMode) {
         btn.classList.add('active');
-        btn.style.backgroundColor = '#e0e7ff';
+        btn.style.backgroundColor = 'var(--primary-bg)';
         state.selectedDates.clear();
     } else {
         btn.classList.remove('active');

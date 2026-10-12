@@ -1,0 +1,37 @@
+name: 家庭行事曆手動發布
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: family-calendar-pages
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm test
+      - name: 注入公開 Firebase 設定並準備部署包
+        run: node scripts/prepare-pages.mjs
+        env:
+          FIREBASE_WEB_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/pages
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 發布至原 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

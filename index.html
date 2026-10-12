@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>悠樂芳行事曆 | Young Living Calendar</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
 </head>
@@ -14,29 +13,49 @@
 <body>
     <header>
         <div class="header-top">
-            <h1>
-                <span class="icon">📅</span>
-                <span id="current-month-year">2026 年 1 月</span>
-            </h1>
-            <div class="controls">
-                <div class="view-toggle">
-                    <button class="btn-toggle" id="view-week">週</button>
-                    <button class="btn-toggle active" id="view-month">月</button>
-                </div>
-                <div class="nav-controls">
-                    <button class="btn-icon" id="select-mode-btn" title="多選模式 (選擇日期分享)">☑️</button>
-                    <div class="divider"></div>
-                    <button class="btn-icon" id="share-btn" title="分享行程">📤</button>
-                    <button class="btn-icon" id="prev-btn" title="上一頁">&lt;</button>
-                    <button class="btn-primary" id="today-btn">今天</button>
-                    <button class="btn-icon" id="next-btn" title="下一頁">&gt;</button>
-                </div>
+            <h1><span class="icon" aria-hidden="true">📅</span><span id="current-month-year">2026 年 1 月</span></h1>
+            <div class="nav-controls" aria-label="日期導覽">
+                <button type="button" class="btn-icon" id="prev-btn" aria-label="上一個月或上一週">‹</button>
+                <button type="button" class="btn-cancel" id="today-btn">今天</button>
+                <button type="button" class="btn-icon" id="next-btn" aria-label="下一個月或下一週">›</button>
             </div>
         </div>
-
+        <div class="calendar-actions">
+            <div class="view-toggle" aria-label="行事曆檢視">
+                <button type="button" class="btn-toggle" id="view-week" aria-pressed="false">週</button>
+                <button type="button" class="btn-toggle active" id="view-month" aria-pressed="true">月</button>
+            </div>
+            <button type="button" class="btn-primary requires-edit" id="add-event-btn">＋新增行程</button>
+            <button type="button" class="btn-cancel" id="select-mode-btn" aria-pressed="false">選日期</button>
+            <button type="button" class="btn-cancel" id="share-btn">分享</button>
+        </div>
+        <p id="selected-date-label" class="calendar-context"></p>
+        <div class="sync-toolbar" aria-label="帳號與資料備份">
+            <div class="sync-line">
+                <p id="sync-status" role="status" aria-live="polite">讀取行事曆中…</p>
+                <button type="button" class="btn-primary" id="login-btn" hidden>Google 登入</button>
+                <details id="account-menu">
+                    <summary class="btn-cancel">帳號與資料</summary>
+                    <div class="account-content">
+                        <p id="account-label"></p>
+                        <div class="sync-actions">
+                            <button type="button" class="btn-cancel" id="backup-btn">匯出完整備份</button>
+                            <button type="button" class="btn-cancel" id="import-btn" hidden>匯入家庭行程</button>
+                            <button type="button" class="btn-cancel" id="logout-btn" hidden>登出</button>
+                        </div>
+                        <details class="legacy-options"><summary>舊版／本機資料</summary>
+                            <button type="button" class="btn-cancel" id="legacy-backup-btn">匯出舊版／本機資料</button>
+                        </details>
+                        <input type="file" id="backup-file" accept=".json,application/json" hidden aria-label="選擇行事曆備份">
+                    </div>
+                </details>
+            </div>
+            <p id="login-help" hidden>手機請用 Safari 或 Chrome 開啟此網址登入。</p>
+        </div>
         <div class="smart-input-container">
-            <textarea id="smart-input" class="smart-input" rows="1" placeholder="💡 智慧輸入：貼上多行內容..."></textarea>
-            <button id="smart-submit-btn" class="btn-send" title="送出解析">➤</button>
+            <label class="sr-only" for="smart-input">智慧輸入行程</label>
+            <textarea id="smart-input" class="smart-input requires-edit" rows="1" placeholder="智慧輸入，例如：明天 18:00 家庭聚餐"></textarea>
+            <button type="button" id="smart-submit-btn" class="btn-send requires-edit" aria-label="解析行程">送出</button>
         </div>
     </header>
 
@@ -50,11 +69,11 @@
     </div>
 
     <!-- Modal for adding/editing events -->
-    <div class="modal-overlay" id="event-modal">
+    <dialog class="modal-overlay" id="event-modal" aria-labelledby="modal-title">
         <div class="modal">
             <div class="modal-header">
                 <h2 class="modal-title" id="modal-title">新增事件</h2>
-                <button class="close-modal" id="close-modal">&times;</button>
+                <button class="close-modal" id="close-modal" aria-label="關閉行程表單">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="input-group">
@@ -63,7 +82,7 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label" for="event-input">活動標題 (Title)</label>
-                    <input type="text" class="input-field" id="event-input" placeholder="輸入標題 (例如：週二夜來香)...">
+                    <input type="text" maxlength="200" class="input-field" id="event-input" placeholder="輸入標題 (例如：週二夜來香)...">
                 </div>
                 <div class="input-group">
                     <label class="input-label" for="event-time">時間 (Time)</label>
@@ -79,7 +98,7 @@
                     </select>
                     <div id="recurrence-info" class="input-help-text"></div>
                 </div>
-                <div class="input-group u-hidden" id="recurrence-end-date-group">
+                <div class="input-group" id="recurrence-end-date-group" hidden>
                     <label class="input-label" for="event-recurrence-end">結束日期 (End Date)</label>
                     <input type="date" class="input-field" id="event-recurrence-end">
                 </div>
@@ -98,6 +117,8 @@
                         <button type="button" id="open-link-btn" class="btn-primary btn-addon">開啟</button>
                     </div>
                 </div>
+                <p id="event-author" class="event-author"></p>
+                <p id="form-feedback" class="form-feedback" role="alert" hidden></p>
                 <input type="hidden" id="selected-date">
             </div>
             <div class="modal-footer">
@@ -106,14 +127,14 @@
                 <button class="btn-primary" id="save-btn">儲存</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- Event Selection Modal (Mobile > 1 event) -->
-    <div class="modal-overlay modal-event-list-overlay" id="event-list-modal-overlay">
+    <dialog class="modal-overlay modal-event-list-overlay" id="event-list-modal-overlay" aria-labelledby="event-list-title">
         <div class="modal modal-event-list-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="event-list-title">選擇行程</h3>
-                <button class="btn-icon" id="close-event-list-modal">✕</button>
+                <button class="btn-icon" id="close-event-list-modal" aria-label="關閉行程列表">✕</button>
             </div>
             <div class="modal-body modal-event-list-body" id="event-list-container">
                 <!-- List injected here -->
@@ -122,14 +143,14 @@
                 <button class="btn-primary u-w-full" id="add-from-list-btn">+ 新增此日行程</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- Share Modal -->
-    <div class="modal-overlay" id="share-modal-overlay">
+    <dialog class="modal-overlay" id="share-modal-overlay" aria-labelledby="share-title">
         <div class="modal share-modal">
             <div class="modal-header">
-                <h2 class="modal-title">分享行程</h2>
-                <button class="close-modal" id="close-share-modal">&times;</button>
+                <h2 class="modal-title" id="share-title">分享行程</h2>
+                <button class="close-modal" id="close-share-modal" aria-label="關閉分享">&times;</button>
             </div>
             <div class="share-preview-container">
                 <label class="input-label">內容預覽</label>
@@ -147,21 +168,42 @@
                 </button>
             </div>
         </div>
-    </div>
+    </dialog>
 
+    <dialog class="modal-overlay" id="import-modal" aria-labelledby="import-title">
+        <div class="modal">
+            <div class="modal-header"><h2 id="import-title">家庭行程匯入預覽</h2></div>
+            <div class="modal-body">
+                <p>確認後，以下內容會提供給所有核准家人查看與編輯。原資料會保留。</p>
+                <p id="import-summary" role="status"></p>
+                <div id="import-preview"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" id="import-cancel">取消</button>
+                <button type="button" class="btn-primary" id="import-confirm">確認匯入家庭行程</button>
+            </div>
+        </div>
+    </dialog>
+    <dialog class="modal-overlay" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+        <div class="modal">
+            <h2 class="modal-title" id="confirm-title">確認操作</h2>
+            <p id="confirm-message" class="confirmation-message"></p>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" id="confirm-no">返回</button>
+                <button type="button" class="btn-primary" id="confirm-yes">確認</button>
+            </div>
+        </div>
+    </dialog>
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay u-hidden">
         <div class="spinner"></div>
         <div class="loading-text">資料同步中...</div>
     </div>
 
-    <footer style="text-align: center; padding: 20px; color: #888; font-size: 0.8rem;">
-        &copy; 2025 Young Living Calendar v1.1.2
-    
-      <p style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 10px; padding-bottom: 20px;">版本號碼：v1.1.2 (Build 36) | 開發者資訊：Chia-Hao</p>
-    </footer>
+    <footer class="site-footer">© 2025 Young Living Calendar・v1.1.2 (Build 36)・Chia-Hao</footer>
 
     <script src="google_api_config.js"></script>
+    <script src="firebase-config.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 

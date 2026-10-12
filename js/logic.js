@@ -1,15 +1,19 @@
+import { openDialog, closeDialog, confirmAction } from './dialogs.js';
 import { state } from "./state.js";
 import {
   renderCalendar,
-  showLoading,
-  hideLoading,
   renderSelectedDayEvents,
 } from "./ui.js";
 import { API } from "./api.js";
 import { formatDateKey, escapeHTML } from "./utils.js";
+import { cleanEvent, recurrenceDates } from './calendar-data.js';
 import { HOLIDAYS_2026 } from "./config.js";
 
 // DOM Cache for Modals (internal to logic)
+let initialForm = null;
+const formSignature = () => JSON.stringify(["event-date-picker", "event-input", "event-time", "event-location", "event-description", "event-link", "event-recurrence", "event-recurrence-end"].map(id => document.getElementById(id).value));
+function formError(message) { const feedback = document.getElementById("form-feedback"); feedback.textContent = message; feedback.hidden = !message; if (message) feedback.scrollIntoView({ block: "nearest" }); }
+
 const MODAL = {
   overlay: () => document.getElementById("event-modal"),
   title: () => document.getElementById("modal-title"),
@@ -40,7 +44,9 @@ const SHARE_MODAL = {
 };
 
 export function openAddModal(dateKey, preFill = null) {
-  if (state.isSelectionMode) return;
+  if (state.isSelectionMode || state.saving || !state.canEdit) return;
+  state.editingEvent = null;
+  document.getElementById("event-author").textContent = "";
   const m = MODAL;
   m.inputDate().value = dateKey;
   m.inputDatePicker().value = dateKey;
@@ -68,21 +74,23 @@ export function openAddModal(dateKey, preFill = null) {
 
   if (preFill || state.editingIndex === -1) state.editingIndex = -1;
 
-  m.overlay().classList.add("active");
+  formError("");
+  openDialog("event-modal");
 
   if (m.recurrence()) {
     m.recurrence().value = "none";
     m.recurrence().disabled = state.editingIndex >= 0;
   }
-  if (m.recurrenceGroup()) m.recurrenceGroup().style.display = "none";
+  if (m.recurrenceGroup()) m.recurrenceGroup().hidden = true;
   if (m.recurrenceEnd()) m.recurrenceEnd().value = "";
 
   updateRecurrenceInfo();
+  initialForm = preFill ? null : formSignature();
   setTimeout(() => m.inputTitle().focus(), 100);
 }
 
 export function editEvent(dateKey, index) {
-  if (state.isSelectionMode) return;
+  if (state.isSelectionMode || state.saving || !state.canEdit) return;
   const evt = state.events[dateKey][index];
   if (!evt) return;
 
@@ -94,19 +102,28 @@ export function editEvent(dateKey, index) {
   m.inputLocation().value = evt.location || "";
   m.inputDesc().value = evt.description || "";
   m.inputLink().value = evt.link || "";
+  document.getElementById("event-author").textContent = evt.updatedByName ? "最近修改：" + evt.updatedByName : "";
 
   state.editingIndex = index;
+  state.editingEvent = structuredClone({ ...evt, date: dateKey });
+  if (m.recurrence()) { m.recurrence().value = "none"; m.recurrence().disabled = true; }
   m.title().textContent = `編輯行程 (${dateKey})`;
   m.saveBtn().textContent = "更新";
 
   if (m.deleteBtn()) m.deleteBtn().style.display = "block";
 
-  m.overlay().classList.add("active");
+  formError("");
+  openDialog("event-modal");
+  if (m.recurrenceGroup()) m.recurrenceGroup().hidden = true;
+  initialForm = formSignature();
   setTimeout(() => m.inputTitle().focus(), 100);
 }
 
-export function closeModal() {
-  MODAL.overlay().classList.remove("active");
+export async function closeModal(options = {}) {
+  if (state.saving && !options.force) return;
+  if (!options.force && formSignature() !== initialForm && !await confirmAction("捨棄未儲存內容？", "關閉後，這次輸入不會儲存。返回表單可繼續編輯。", "捨棄並關閉")) return;
+  closeDialog("event-modal");
+  initialForm = null;
 }
 
 export function updateRecurrenceInfo() {
@@ -133,212 +150,54 @@ export function updateRecurrenceInfo() {
 }
 
 export async function saveEvent() {
+  if (state.saving) return;
   const m = MODAL;
-  const title = m.inputTitle().value.trim();
-  const time = m.inputTime().value.trim();
-  const location = m.inputLocation().value.trim();
-  const description = m.inputDesc().value.trim();
-  const link = m.inputLink().value.trim();
-
-  const originalDateKey = m.inputDate().value;
-  const newDateKey = m.inputDatePicker().value;
-
-  if (!newDateKey) {
-    alert("請選擇日期");
-    return;
-  }
-
-  if (!title) {
-    alert("請輸入標題");
-    return;
-  }
-
-  let finalTime = time;
-  if (!finalTime) finalTime = "全日";
-
-  const newEvent = {
-    title,
-    time: finalTime,
-    location,
-    description,
-    link,
-  };
-
-  // 1. 備份受影響的 state 狀態以利失敗時回滾 (Rollback)
-  const backupEventsState = JSON.parse(JSON.stringify(state.events));
-
-  // Check if moving event (existing event + date changed)
-  const isMovingEvent =
-    state.editingIndex >= 0 && originalDateKey !== newDateKey;
-
-  if (isMovingEvent) {
-    // 1. Remove from old date
-    if (state.events[originalDateKey]) {
-      state.events[originalDateKey].splice(state.editingIndex, 1);
-      if (state.events[originalDateKey].length === 0) {
-        delete state.events[originalDateKey];
-      }
-    }
-    // 2. Add to new date (Treat as new event on that day)
-    if (!state.events[newDateKey]) state.events[newDateKey] = [];
-    state.events[newDateKey].push(newEvent);
-  } else {
-    // Normal Save (Add new OR Edit same day)
-    if (!state.events[newDateKey]) state.events[newDateKey] = [];
-
-    if (state.editingIndex >= 0) {
-      state.events[newDateKey][state.editingIndex] = newEvent;
-    } else {
-      // New Event Logic
-      const recurrence = m.recurrence() ? m.recurrence().value : "none";
-
-      if (recurrence === "none") {
-        state.events[newDateKey].push(newEvent);
-      } else {
-        const [y, m_val, d] = newDateKey.split("-").map(Number);
-        let startDate = new Date(y, m_val - 1, d);
-        let endDate = new Date(startDate);
-
-        if (recurrence === "weekly_current_month") {
-          endDate = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth() + 1,
-            0
-          );
-        } else if (recurrence === "weekly_3_month") {
-          endDate = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth() + 3,
-            startDate.getDate()
-          );
-        } else if (recurrence === "custom") {
-          const customEnd = m.recurrenceEnd().value;
-          if (customEnd && /^\d{4}-\d{2}-\d{2}$/.test(customEnd)) {
-            const [ey, em, ed] = customEnd.split("-").map(Number);
-            endDate = new Date(ey, em - 1, ed);
-          } else {
-            endDate = startDate;
-          }
-        }
-
-        let loopDate = new Date(startDate);
-        while (loopDate <= endDate) {
-          const loopKey = formatDateKey(loopDate);
-          if (!state.events[loopKey]) state.events[loopKey] = [];
-          const clonedEvent = { ...newEvent };
-          state.events[loopKey].push(clonedEvent);
-          state.events[loopKey].sort((a, b) => {
-            if (a.time === "全日") return -1;
-            if (b.time === "全日") return 1;
-            return (a.time || "").localeCompare(b.time || "");
-          });
-          loopDate.setDate(loopDate.getDate() + 7);
-        }
-      }
-    }
-  }
-
-  // Sort events on the target date
-  if (state.events[newDateKey]) {
-    state.events[newDateKey].sort((a, b) => {
-      if (a.time === "全日") return -1;
-      if (b.time === "全日") return 1;
-      return (a.time || "").localeCompare(b.time || "");
-    });
-  }
-
-  showLoading();
-
-  const recurrence = m.recurrence() ? m.recurrence().value : "none";
-  const promises = [];
-
-  if (isMovingEvent) {
-    promises.push(
-      API.saveDayEvents(originalDateKey, state.events[originalDateKey] || [])
-    );
-    promises.push(
-      API.saveDayEvents(newDateKey, state.events[newDateKey] || [])
-    );
-  } else if (state.editingIndex === -1 && recurrence !== "none") {
-    const [y, m_val, d] = newDateKey.split("-").map(Number);
-    let startDate = new Date(y, m_val - 1, d);
-    let endDate = new Date(startDate);
-
-    if (recurrence === "weekly_current_month") {
-      endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-    } else if (recurrence === "weekly_3_month") {
-      endDate = new Date(
-        startDate.getFullYear(),
-        startDate.getMonth() + 3,
-        startDate.getDate()
-      );
-    } else if (recurrence === "custom") {
-      const customEnd = m.recurrenceEnd().value;
-      if (customEnd) endDate = new Date(customEnd);
-      else endDate = startDate;
-    }
-
-    let loopDate = new Date(startDate);
-    while (loopDate <= endDate) {
-      const loopKey = formatDateKey(loopDate);
-      promises.push(API.saveDayEvents(loopKey, state.events[loopKey]));
-      loopDate.setDate(loopDate.getDate() + 7);
-    }
-  } else {
-    promises.push(
-      API.saveDayEvents(newDateKey, state.events[newDateKey] || [])
-    );
-  }
-
   try {
-    // 執行真正 API 寫入
-    await Promise.all(promises);
+    const event = cleanEvent({
+      title: m.inputTitle().value.trim(), time: m.inputTime().value.trim() || "全日",
+      location: m.inputLocation().value.trim(), description: m.inputDesc().value.trim(), link: m.inputLink().value.trim()
+    });
+    const date = m.inputDatePicker().value;
+    const before = state.editingEvent;
+    const dates = recurrenceDates(date, before ? 'none' : m.recurrence().value, m.recurrenceEnd().value);
+    const changes = before ? [{ id: before.id, before, after: { ...event, date } }]
+      : dates.map(day => ({ id: crypto.randomUUID(), before: null, after: { ...event, date: day } }));
+    await performChanges(changes);
+  } catch (error) { formError('尚未儲存：' + error.message); }
+}
 
-    // ✅ 寫入成功：才關閉 Modal 視窗並重新渲染畫面
-    closeModal();
-    renderCalendar();
-  } catch (err) {
-    // ❌ 寫入失敗：將 state 回滾至備份狀態，保留 Modal 視窗不關閉以供重試
-    state.events = backupEventsState;
-    console.error("儲存失敗，已成功回滾 Local State:", err);
-    alert("儲存失敗，請檢查網路或是 API 配額：\n" + err.message);
+async function performChanges(changes) {
+  state.saving = true;
+  formError("");
+  const previousSaveText = MODAL.saveBtn().textContent;
+  MODAL.saveBtn().textContent = "儲存中…";
+  MODAL.saveBtn().disabled = true; MODAL.deleteBtn().disabled = true;
+  try {
+    const updated = await API.commitChanges(changes);
+    if (updated) state.events = updated;
+    if (changes[0].after) {
+      state.activeSplitDate = changes[0].after.date;
+      const [year, month, day] = state.activeSplitDate.split("-").map(Number);
+      state.currentDate = new Date(year, month - 1, day, 12);
+      window.dispatchEvent(new Event("calendar-view-change"));
+    }
+    await closeModal({ force: true }); state.editingEvent = null; state.editingIndex = -1;
   } finally {
-    hideLoading();
+    state.saving = false;
+    MODAL.saveBtn().textContent = previousSaveText;
+    MODAL.saveBtn().disabled = false; MODAL.deleteBtn().disabled = false;
+    renderCalendar();
+    if (!MODAL.overlay().open) document.getElementById("add-event-btn").focus();
   }
 }
 
 export async function deleteEvent() {
-  const dateKey = MODAL.inputDate().value;
-  if (state.editingIndex === -1) return;
-
-  if (!confirm("確定要刪除這個行程嗎？")) return;
-
-  const backupEventsState = JSON.parse(JSON.stringify(state.events));
-
-  if (state.events[dateKey]) {
-    state.events[dateKey].splice(state.editingIndex, 1);
-    if (state.events[dateKey].length === 0) {
-      delete state.events[dateKey];
-    }
-  }
-
-  showLoading();
-
-  try {
-    const eventsToSave = state.events[dateKey] || [];
-    await API.saveDayEvents(dateKey, eventsToSave);
-
-    // ✅ 刪除成功：才關閉視窗並重新繪製
-    closeModal();
-    renderCalendar();
-  } catch (err) {
-    // ❌ 刪除失敗：回滾 State，保持原始畫面狀態
-    state.events = backupEventsState;
-    console.error("刪除失敗，已成功回滾 Local State:", err);
-    alert("刪除失敗：" + err.message);
-  } finally {
-    hideLoading();
-  }
+  if (state.saving || !state.editingEvent) return;
+  const before = state.editingEvent;
+  if (!await confirmAction("刪除這筆行程？", "刪除後，核准家人也會看不到這筆行程。", "確認刪除")) return;
+  if (!state.canEdit || state.editingEvent?.id !== before.id) return;
+  try { await performChanges([{ id: before.id, before, after: null }]); }
+  catch (error) { formError('尚未刪除：' + error.message); }
 }
 
 // Event List Modal
@@ -357,45 +216,28 @@ export function openEventListModal(dateKey) {
 
   const dayEvents = state.events[dateKey] || [];
 
-  lm.container().innerHTML = dayEvents
-    .map((evt, index) => {
-      const safeTitle = escapeHTML(evt.title);
-      const safeTime = escapeHTML(evt.time);
-      const safeLocation = escapeHTML(evt.location);
+  lm.container().innerHTML = dayEvents.map((evt, index) =>
+    '<button type="button" class="event-item event-list-choice requires-edit" ' + (!state.canEdit ? 'disabled' : '') + ' onclick="closeEventListModal(); editEvent(\'' + dateKey + '\', ' + index + ');">' +
+    '<span class="event-time">' + escapeHTML(evt.time || '全日') + '</span><span class="event-title">' + escapeHTML(evt.title) + '</span>' +
+    (evt.location ? '<span class="event-detail">地點：' + escapeHTML(evt.location) + '</span>' : '') + '</button>'
+  ).join('');
 
-      const timeDisplay = safeTime === "全日" ? "全日" : safeTime || "";
-      return `
-         <div class="event-item" onclick="closeEventListModal(); editEvent('${dateKey}', ${index});" style="cursor:pointer; border:1px solid #e0e7ff; margin-bottom:0.5rem; padding:0.75rem; border-radius:0.5rem; background:white;">
-             <div style="font-weight:bold; color:#4f46e5; margin-bottom:0.25rem;">${timeDisplay}</div>
-             <div class="event-title" style="font-size:1rem; font-weight:500;">
-                ${safeTitle}
-             </div>
-             ${
-               safeLocation
-                 ? `<div style="font-size:0.85rem; color:#6b7280; margin-top:0.25rem;">📍 ${safeLocation}</div>`
-                 : ""
-             }
-         </div>
-         `;
-    })
-    .join("");
-
-  lm.overlay().classList.add("active");
+  openDialog("event-list-modal-overlay");
 }
 
 export function closeEventListModal() {
   const lm = LIST_MODAL;
-  if (lm.overlay()) lm.overlay().classList.remove("active");
+  if (lm.overlay()) closeDialog("event-list-modal-overlay");
 }
 
 // Share Logic
 export function openShareModal(text) {
   SHARE_MODAL.preview().value = text;
-  SHARE_MODAL.overlay().classList.add("active");
+  openDialog("share-modal-overlay");
 }
 
 export function closeShareModal() {
-  SHARE_MODAL.overlay().classList.remove("active");
+  closeDialog("share-modal-overlay");
 }
 
 export function shareSchedule(customStart = null, customEnd = null) {

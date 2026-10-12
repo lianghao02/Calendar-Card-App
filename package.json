@@ -4,10 +4,12 @@
   "description": "Weekly Calendar Card App",
   "main": "index.html",
   "scripts": {
-    "check": "node --check apps-script/backend_code.js && node --check js/api.js && node --check js/app.js && node --check js/logic.js && node --check js/smart-input.js && node --check js/ui.js",
-    "test": "npm run check"
+    "check": "node scripts/check.mjs",
+    "test": "npm run check && node --test tests/*.test.mjs",
+    "test:rules": "node --test tests/security.rules.mjs"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "type": "module"
 }

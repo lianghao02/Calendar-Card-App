@@ -1,3 +1,13 @@
+# 家庭共用 Firebase 改版進度
+
+已加入 Google 登入、核准家庭成員共用、逐筆行程版本防護、JSON 完整備份與匯入預覽。原始碼的 Firebase 預設關閉；獨立專案 calendar-family-lianghao02 已建立，Firestore Standard 位於台灣 asia-east1，Google 登入與正式規則已發布。已部署七天手機測試版並核准首位家庭成員。原 GAS 的 58 筆行程已備份、匯入 Firebase 並逐筆讀回核對；原 GitHub Pages 尚未切換。既有本機／GAS 模式供遷移期間使用。
+
+設定與驗收見 [FIREBASE_SETUP.md](FIREBASE_SETUP.md)，工作清單見 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。npm test 現在包含資料測試與語法檢查；家庭權限另以 Firestore Emulator 測試，不等於正式登入與手機實測。
+
+手機商品品質修訂已更新測試頻道：修正換月／月底日期、週月明細、自訂重複欄位，整理帳號與資料選單、主要新增入口、觸控按鈕及原生對話框。21 項自動測試通過；最終手機確認操作、雲端 CRUD 與跨裝置驗收仍待完成。
+
+以下原版說明保留作為遷移期間參考。
+
 # 莫蘭迪卡片式行事曆 Calendar-Card-App v1.1.2
 
 ## 專案概念與開發原因
@@ -81,3 +91,7 @@ API 錯誤處理、日期解析／驗證與本機服務入口等修正見 [CHANG
 ### 問題回報
 
 請提供使用版本／啟動方式、作業系統與相關環境、重現步驟、預期及實際結果，以及去識別的錯誤訊息或最小樣本。先保留現場與來源資料；不要附真實案件、完整帳號、密碼、Token 或 API Key。版本修正以對應原始碼與發行包為準。
+
+### 本輪原始碼同步邊界
+
+新版推送至 codex/firebase-family；main 仍服務原 GitHub Pages。舊 GAS 設定檔已移出新版追蹤，本機原檔保留；新環境可複製 google_api_config.example.js 為 google_api_config.js 再自行設定。Firebase 正式部署依 FIREBASE_SETUP.md 注入公開設定。切換後須停用 Git 歷史已曝光的舊 Token，本輪不改寫歷史。
