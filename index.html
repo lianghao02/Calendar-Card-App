@@ -15,6 +15,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="家庭行事曆">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <script>
+        if (window.location.hostname === 'lianghao02.github.io' && window.location.pathname.includes('Calendar-Card-App')) {
+            window.location.replace('https://calendar-family-lianghao02.web.app/' + window.location.search + window.location.hash);
+        }
+    </script>
 </head>
 
 <body>
