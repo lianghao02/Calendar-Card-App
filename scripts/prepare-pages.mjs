@@ -17,6 +17,10 @@ const target = path.join(root, 'dist', 'pages');
 if (fs.existsSync(target)) throw new Error('dist/pages 已存在，請先保留並移開前次部署包');
 fs.mkdirSync(target, { recursive: true });
 for (const file of ['index.html', 'style.css']) fs.copyFileSync(path.join(root, file), path.join(target, file));
+for (const file of ['manifest.webmanifest', 'sw.js', 'icon-192.png', 'icon-512.png']) {
+    const src = path.join(root, file);
+    if (fs.existsSync(src)) fs.copyFileSync(src, path.join(target, file));
+}
 fs.cpSync(path.join(root, 'js'), path.join(target, 'js'), { recursive: true });
 fs.writeFileSync(path.join(target, 'firebase-config.js'), `window.CALENDAR_FIREBASE = ${JSON.stringify({ enabled: true, familyId: input.familyId, config })};\n`, 'utf8');
 // 正式切換包不再攜帶原 GAS 共用 Token；原網址的備份必須在切換前完成。
