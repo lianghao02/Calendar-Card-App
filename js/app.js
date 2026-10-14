@@ -103,6 +103,84 @@ function setupEventListeners() {
         }
     });
 
+    // Mobile Bottom Bar Actions
+    const mobileTodayBtn = document.getElementById('mobile-today-btn');
+    if (mobileTodayBtn) {
+        mobileTodayBtn.addEventListener('click', () => {
+            state.currentDate = new Date();
+            state.activeSplitDate = formatDateKey(state.currentDate);
+            refreshCalendarRange();
+            renderCalendar();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    const mobileAddBtn = document.getElementById('mobile-add-btn');
+    if (mobileAddBtn) {
+        mobileAddBtn.addEventListener('click', () => {
+            openAddModal(state.activeSplitDate || formatDateKey(state.currentDate));
+        });
+    }
+
+    const mobileViewToggle = document.getElementById('mobile-view-toggle');
+    if (mobileViewToggle) {
+        mobileViewToggle.addEventListener('click', () => {
+            switchView(state.currentView === 'month' ? 'week' : 'month');
+        });
+    }
+
+    const mobileShareBtn = document.getElementById('mobile-share-btn');
+    if (mobileShareBtn) {
+        mobileShareBtn.addEventListener('click', () => {
+            if (state.isSelectionMode && state.selectedDates.size > 0) {
+                shareSelectedDates();
+            } else {
+                shareSchedule();
+            }
+        });
+    }
+
+    // Mobile Smart Input Dialog
+    const mobileSmartBtn = document.getElementById('mobile-smart-btn');
+    const mobileSmartDialog = document.getElementById('mobile-smart-dialog');
+    const mobileSmartInput = document.getElementById('mobile-smart-input');
+    const mobileSmartSubmit = document.getElementById('mobile-smart-submit');
+    const closeMobileSmart = document.getElementById('close-mobile-smart');
+    const cancelMobileSmart = document.getElementById('cancel-mobile-smart');
+
+    if (mobileSmartBtn && mobileSmartDialog) {
+        mobileSmartBtn.addEventListener('click', () => {
+            mobileSmartDialog.showModal();
+            setTimeout(() => mobileSmartInput?.focus(), 80);
+        });
+        const closeSmartSheet = () => {
+            mobileSmartDialog.close();
+            if (mobileSmartInput) mobileSmartInput.value = '';
+        };
+        closeMobileSmart?.addEventListener('click', closeSmartSheet);
+        cancelMobileSmart?.addEventListener('click', closeSmartSheet);
+        mobileSmartDialog.addEventListener('click', (e) => {
+            if (e.target === mobileSmartDialog) closeSmartSheet();
+        });
+        if (mobileSmartSubmit && mobileSmartInput) {
+            mobileSmartSubmit.addEventListener('click', () => {
+                const text = mobileSmartInput.value.trim();
+                if (!text) return;
+                mobileSmartDialog.close();
+                processSmartInput(mobileSmartInput);
+            });
+            mobileSmartInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    const text = mobileSmartInput.value.trim();
+                    if (!text) return;
+                    mobileSmartDialog.close();
+                    processSmartInput(mobileSmartInput);
+                }
+            });
+        }
+    }
+
     // Modals
     document.getElementById('close-modal').addEventListener('click', closeModal);
     document.getElementById('cancel-btn').addEventListener('click', closeModal);

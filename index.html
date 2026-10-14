@@ -207,6 +207,57 @@
         <div class="loading-text">資料同步中...</div>
     </div>
 
+    <!-- 行動端專屬智慧輸入彈窗 (Mobile Smart Input Dialog) -->
+    <dialog class="modal-overlay" id="mobile-smart-dialog" aria-labelledby="mobile-smart-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="mobile-smart-title">✨ 智慧新增行程</h2>
+                <button type="button" class="close-modal" id="close-mobile-smart" aria-label="關閉智慧輸入">✕</button>
+            </div>
+            <div class="modal-body">
+                <label for="mobile-smart-input" class="sr-only">請輸入時間與事項（自然語言解析）：</label>
+                <textarea id="mobile-smart-input" class="smart-input u-w-full" rows="3" placeholder="例如：明天 18:00 家庭聚餐、每週五 14:00 會議、3/25 買菜"></textarea>
+                <p class="input-help-text" style="display:block;margin-top:0.5rem;color:var(--text-secondary);">
+                    支援「明天/後天/下週幾」、「HH:MM」時間、重複週期或指定地點。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" id="cancel-mobile-smart">取消</button>
+                <button type="button" class="btn-primary" id="mobile-smart-submit">解析並新增</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- 手機端固定底部操作列 (Mobile Bottom Navigation & Action Bar) -->
+    <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="行動快捷操作">
+        <div class="bar-group">
+            <button type="button" class="bar-btn" id="mobile-view-toggle" aria-label="切換週或月檢視">
+                <span class="bar-icon" id="mobile-view-icon" aria-hidden="true">📅</span>
+                <span class="bar-label" id="mobile-view-text">週檢視</span>
+            </button>
+            <button type="button" class="bar-btn" id="mobile-today-btn" aria-label="回到今天">
+                <span class="bar-icon" aria-hidden="true">🎯</span>
+                <span class="bar-label">今天</span>
+            </button>
+        </div>
+
+        <button type="button" class="bar-fab requires-edit" id="mobile-add-btn" aria-label="新增行程" title="新增行程">
+            <span class="fab-icon" aria-hidden="true">＋</span>
+            <span class="fab-label">新增</span>
+        </button>
+
+        <div class="bar-group">
+            <button type="button" class="bar-btn requires-edit" id="mobile-smart-btn" aria-label="智慧輸入行程">
+                <span class="bar-icon" aria-hidden="true">✨</span>
+                <span class="bar-label">智慧輸入</span>
+            </button>
+            <button type="button" class="bar-btn" id="mobile-share-btn" aria-label="分享行程">
+                <span class="bar-icon" aria-hidden="true">📤</span>
+                <span class="bar-label">分享</span>
+            </button>
+        </div>
+    </nav>
+
     <footer class="site-footer">© 2025 Young Living Calendar・v1.1.2 (Build 36)・Chia-Hao</footer>
 
     <script src="google_api_config.js"></script>

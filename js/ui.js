@@ -37,7 +37,34 @@ export function switchView(view) {
         DOM.viewMonthBtn().classList.add('active');
         DOM.viewWeekBtn().classList.remove('active');
     }
+    updateMobileBottomBar();
     renderCalendar();
+}
+
+export function updateMobileBottomBar() {
+    const mobileViewText = document.getElementById('mobile-view-text');
+    const mobileViewIcon = document.getElementById('mobile-view-icon');
+    if (mobileViewText && mobileViewIcon) {
+        if (state.currentView === 'month') {
+            mobileViewText.textContent = '週檢視';
+            mobileViewIcon.textContent = '📆';
+        } else {
+            mobileViewText.textContent = '月檢視';
+            mobileViewIcon.textContent = '📅';
+        }
+    }
+    const mobileAddBtn = document.getElementById('mobile-add-btn');
+    if (mobileAddBtn) {
+        mobileAddBtn.disabled = !state.canEdit || state.saving || state.isSelectionMode;
+    }
+    const mobileSmartBtn = document.getElementById('mobile-smart-btn');
+    if (mobileSmartBtn) {
+        mobileSmartBtn.disabled = !state.canEdit || state.saving;
+    }
+    const mobileShareBtn = document.getElementById('mobile-share-btn');
+    if (mobileShareBtn) {
+        mobileShareBtn.disabled = !state.canEdit || (state.isSelectionMode && !state.selectedDates.size);
+    }
 }
 
 export function updateHeaderDate(date = state.currentDate, type = state.currentView) {
@@ -76,6 +103,7 @@ export function renderCalendar() {
     document.getElementById('share-btn').disabled = !state.canEdit || (state.isSelectionMode && !state.selectedDates.size);
     document.getElementById('select-mode-btn').disabled = !state.canEdit;
     refreshSyncSummary();
+    updateMobileBottomBar();
     
     if (state.currentView === 'week') {
         grid.className = 'calendar-container view-week';
