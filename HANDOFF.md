@@ -2,6 +2,63 @@
 
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
+- **Branch**：codex/firebase-family
+- **Commit SHA**：17f54b3322c622abd7c06284732605f9f1e4cf14（本輪修改前基準；交付提交以包含本交接的 Git 記錄為準）
+- **Skill Version**：v1.0.0
+- **Task Type**：HANDOFF
+- **Local Path Hint**：11_Calendar-Card-App
+
+## 目前狀態
+2026-10-16：家庭版與 main 已同步；GitHub Pages 已轉導 Firebase Hosting。README 的遷移前敘述已校正，於本輪提交並同步至家庭版與 main。
+
+## 本輪目標
+移除已失效的尚未切換敘述。
+
+## 基準與已確認事實 (Baseline & Confirmed Facts)
+起始分支 codex/firebase-family，工作目錄乾淨；既有交接已記載轉導上線證據。
+
+## 已完成 (Completed)
+校正 README 的 Pages 轉導與 npm test 涵蓋範圍，不變更雲端資料或部署。
+
+## 異動檔案 (Changed Files)
+README.md、HANDOFF.md。
+
+## 刻意未修改 (Do Not Do / Deliberately Omitted)
+未修改來源資產、既有發布包、全域憲法與共用 Skills；本輪提交並推送既有修正，不另建立 Release。
+
+## 尚未完成 (Remaining Work)
+- **P1 (阻斷/必須)**：本輪文件修正無阻斷項目。
+- **P2 (重要/當次)**：手機 PWA 與跨裝置操作仍依原交接待驗收。
+- **P3 (改善建議/暫緩)**：其他專案重構不在本輪範圍。
+
+## 驗證結果 (Validation)
+### 已執行測試與結果
+npm test：21／21 通過，全部 JavaScript 語法檢查通過；README 差異已核對。未重跑雲端與跨裝置驗收。
+### 尚未驗證項目
+手機 PWA 與跨裝置操作仍依原交接待驗收。
+### 已知風險 (Known Risks)
+原始碼修正不會自動更新既有下載包或正式部署。
+
+## Git 狀態
+- Commit：本輪差異獨立提交；SHA 以包含本交接的 Git 記錄為準。
+- Push：交付時核對 HEAD 與遠端追蹤分支一致。
+- Working Tree：提交後以 git status 確認，未納入無關修改。
+- Branch：codex/firebase-family。
+
+## 下一步建議動作 (Next Recommended Action)
+保留手機與跨裝置實測待辦；本輪不重新部署 Firebase。
+
+## 發布狀態 (Release Status)
+既有正式服務維持上線；本輪只同步文件，不變更雲端資料。
+
+---
+
+## 歷史交接快照（以下不是當前待辦或測試結果）
+
+# HANDOFF
+
+## 核心元資料 (Metadata)
+- **Repository**：lianghao02/Calendar-Card-App
 - **Branch**：codex/firebase-family（已同步至 main）
 - **Commit SHA**：226a8d8442fae3dd56a9faeef16c02ebba949b2c
 - **Skill Version**：v1.0.0

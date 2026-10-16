@@ -1,6 +1,6 @@
 # 家庭共用 Firebase 改版進度
 
-已加入 Google 登入、核准家庭成員共用、逐筆行程版本防護、JSON 完整備份與匯入預覽。原始碼的 Firebase 預設關閉；獨立專案 calendar-family-lianghao02 已建立，Firestore Standard 位於台灣 asia-east1，Google 登入與正式規則已發布。已部署七天手機測試版並核准首位家庭成員。原 GAS 的 58 筆行程已備份、匯入 Firebase 並逐筆讀回核對；原 GitHub Pages 尚未切換。既有本機／GAS 模式供遷移期間使用。
+已加入 Google 登入、核准家庭成員共用、逐筆行程版本防護、JSON 完整備份與匯入預覽。原始碼的 Firebase 預設關閉；獨立專案 calendar-family-lianghao02 已建立，Firestore Standard 位於台灣 asia-east1，Google 登入與正式規則已發布。已部署七天手機測試版並核准首位家庭成員。原 GAS 的 58 筆行程已備份、匯入 Firebase 並逐筆讀回核對；原 GitHub Pages 已轉導至 Firebase Hosting。既有本機／GAS 模式供遷移期間使用。
 
 設定與驗收見 [FIREBASE_SETUP.md](FIREBASE_SETUP.md)，工作清單見 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。npm test 現在包含資料測試與語法檢查；家庭權限另以 Firestore Emulator 測試，不等於正式登入與手機實測。
 
@@ -86,7 +86,7 @@ node --check js/ui.js
 | 保存限制 | 本機資料依瀏覽器與網站來源保存。 | 換瀏覽器、換連接埠或清除網站資料可能看不到原資料；localStorage 不應當作唯一備份。 |
 | 服務限制 | GAS 同步需要網路、部署權限與可用服務；字型亦可能需要連線。 | 檢查同步回應及設定；未收到成功回應前，不認定雲端已保存。 |
 
-API 錯誤處理、日期解析／驗證與本機服務入口等修正見 [CHANGELOG.md](CHANGELOG.md)。npm test 目前執行 JavaScript 語法檢查，不等於完整瀏覽器操作與雲端端到端測試；日期解析結果仍需人工確認。
+API 錯誤處理、日期解析／驗證與本機服務入口等修正見 [CHANGELOG.md](CHANGELOG.md)。npm test 包含資料測試與 JavaScript 語法檢查，不等於完整瀏覽器操作與雲端端到端測試；日期解析結果仍需人工確認。
 
 ### 問題回報
 
@@ -94,4 +94,4 @@ API 錯誤處理、日期解析／驗證與本機服務入口等修正見 [CHANG
 
 ### 本輪原始碼同步邊界
 
-新版推送至 codex/firebase-family；main 仍服務原 GitHub Pages。舊 GAS 設定檔已移出新版追蹤，本機原檔保留；新環境可複製 google_api_config.example.js 為 google_api_config.js 再自行設定。Firebase 正式部署依 FIREBASE_SETUP.md 注入公開設定。切換後須停用 Git 歷史已曝光的舊 Token，本輪不改寫歷史。
+新版已推送至 codex/firebase-family 與 main；GitHub Pages 保留原網址並轉導至 Firebase Hosting。舊 GAS 設定檔已移出新版追蹤，本機原檔保留；新環境可複製 google_api_config.example.js 為 google_api_config.js 再自行設定。Firebase 正式部署依 FIREBASE_SETUP.md 注入公開設定。切換後須停用 Git 歷史已曝光的舊 Token，本輪不改寫歷史。
