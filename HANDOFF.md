@@ -8,6 +8,24 @@
 - **Task Type**：HANDOFF
 - **Local Path Hint**：11_Calendar-Card-App
 
+## 2026-10-20 2D Q 版介面接手收尾（Claude）
+- 前一輪（其他 Agent，已結束）未提交的 Q 版改版，本輪已驗收並一併提交。範圍：`style.css` 與 `js/ui.js` 的選取日高亮條件。
+- 修正內容：
+  - 色彩變數調整：`--game-blue` 改為 `#2563EB`、`--game-green` 改為 `#047857`、`--danger-color` 改為 `#DC2626`。
+  - 非本月日期的透明度從 0.48 調整為 0.78。
+  - Service Worker 快取名稱改為 `calendar-card-app-v3`。
+  - 空白日提示文字修正。
+- 驗證：
+  - `npm test` 21/21 通過。
+  - `node --check js/app.js` 與 `scripts/qa.ps1` 通過。
+  - 本機以 `http.server` 實測，視窗 1366×800 與手機 375×812：
+    - 以智慧輸入新增「明天 18:00 家庭聚餐」，確認對話框正確解析並成功新增。
+    - 月、週、行程對話框三個畫面的可見文字對比，皆無低於 4.5:1。
+- 未做：
+  - 沒有部署 Firebase Hosting，也沒有推送。
+  - 沒有重建 `dist/`。
+  - 沒有測試 Firebase 登入與家庭共用（核心邏輯未修改）。
+
 ## 目前狀態
 2026-10-16：家庭版與 main 已同步；GitHub Pages 已轉導 Firebase Hosting。README 的遷移前敘述已校正，於本輪提交並同步至家庭版與 main。
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calendar-card-app-v2';
+const CACHE_NAME = 'calendar-card-app-v3';
 const STATIC_ASSETS = [
     './',
     './index.html',

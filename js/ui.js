@@ -265,7 +265,7 @@ function createDayCard(container, date, isOtherMonth) {
         };
     }
     
-    if (state.activeSplitDate === dateKey && window.innerWidth <= 640 && state.currentView === 'month') {
+    if (state.activeSplitDate === dateKey && !state.isSelectionMode) {
         dayCard.classList.add('selected-day');
     }
 
@@ -294,7 +294,7 @@ export function renderSelectedDayEvents(dateKey) {
     let html = `<h3>${m}/${d} (${w}) 行程</h3>`;
     
     if (dayEvents.length === 0) {
-        html += `<div class="empty-day-state"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="13" y="16" width="38" height="35" rx="7"/><path d="M21 11v10m22-10v10M21 30h22m-15 9h8"/></svg><p>無行程</p><small>可使用上方智慧輸入快速新增安排</small></div>`;
+        html += `<div class="empty-day-state"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="13" y="16" width="38" height="35" rx="7"/><path d="M21 11v10m22-10v10M21 30h22m-15 9h8"/></svg><p>無行程</p><small>可使用「智慧輸入」快速新增安排</small></div>`;
     } else {
         html += dayEvents.map((evt, index) => {
             const link = sanitizeLink(evt.link);
