@@ -8,7 +8,7 @@
 
 以下原版說明保留作為遷移期間參考。
 
-# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.2.0
+# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.3.0
 
 ## 專案概念與開發原因
 
@@ -22,7 +22,7 @@
 
 本專案主力為 **HTML5／CSS／ES2020 JavaScript**；雲端同步為選用的 Google Apps Script，Python 只用於本機靜態伺服器。現階段維持免建置網站，若需安裝與離線能力優先導入 PWA，不進行語言遷移。
 
-[![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
 這是一套以卡片呈現月曆與活動的網頁應用程式，可在純前端本機模式使用，也可搭配 Google Apps Script 後端同步資料。
@@ -35,6 +35,12 @@
 - **雲端同步**：選用 Google Apps Script 時，另部署 `apps-script/backend_code.js`，再從 `google_api_config.example.js` 建立本機設定檔。
 - **打包／部署**：不需編譯；完整上傳 `index.html`、`css/`、`js/` 及必要設定檔至 GitHub Pages 或其他 HTTPS 靜態空間。
 - **開發檢查**：已安裝 Node.js 時可執行 `npm test`；`package.json` 沒有執行期套件。
+
+## v1.3.0 更新重點
+
+- 介面改為 2D Q 版：奶油圓點底、粗墨框日期卡、厚底按鈕與金色今日外框，週／月檢視、對話框與手機底部導覽同步套用。
+- 按鈕、今日徽章與非本月日期提高對比，符合 WCAG AA。
+- 桌面與週檢視點選日期時也會標示選取。
 
 ## v1.2.0 更新重點
 

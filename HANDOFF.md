@@ -1,16 +1,72 @@
 # HANDOFF
 
-> 2026-10-21 註：本檔下方提到的 `codex/firebase-family` 分支已完全合併至 `main` 並刪除，目前只使用 `main`。
-
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
-- **Branch**：codex/firebase-family
-- **Commit SHA**：17f54b3322c622abd7c06284732605f9f1e4cf14（本輪修改前基準；交付提交以包含本交接的 Git 記錄為準）
+- **Branch**：main
+- **Commit SHA**：1949324（本輪修改前基準；本輪升版尚未提交）
 - **Skill Version**：v1.0.0
-- **Task Type**：HANDOFF
+- **Task Type**：RELEASE
 - **Local Path Hint**：11_Calendar-Card-App
 
-## 2026-10-20 2D Q 版介面接手收尾（Claude）
+---
+
+## 目前狀態
+待部署。v1.3.0 (Build 38) 版號已更新、測試通過、部署包已重建，但尚未提交、推送與部署；正式站目前是「Q 版內容＋v1.2.0 (Build 37) 版號」。
+
+## 本輪目標
+1. 2026-10-21 將 Q 版改版部署到 Firebase Hosting 正式站（使用者授權，只部署 Hosting）。
+2. 部署後依使用者要求升版為 v1.3.0 (Build 38)，讓版號能區分改版前後。
+
+## 基準與已確認事實 (Baseline & Confirmed Facts)
+- `main` 與 `origin/main` 一致，工作目錄乾淨；`codex/firebase-family` 已合併並刪除，目前只使用 `main`。
+- Firebase 專案 `calendar-family-lianghao02`，`firebase.json` 的 Hosting 來源為 `dist/pages`；CLI 使用 `17_Subscription-Manager` 內的 firebase-tools 15.33.0，帳號 tpc0941101090@gmail.com。
+
+## 已完成 (Completed)
+- **Q 版部署**：重建 `dist/pages` 後執行 `firebase deploy --only hosting --project calendar-family-lianghao02`，上傳 14 個檔案；線上 21 個檔案的 SHA-256 與部署包全部一致，瀏覽器開啟正式網址無錯誤，Service Worker 已註冊。
+- **升版 v1.3.0 (Build 38)**：`package.json`／`package-lock.json`、`index.html` 頁尾、`README.md`（標題、徽章、新增 v1.3.0 更新重點）、`CHANGELOG.md`（未發布段落改為 v1.3.0）。
+- **快取**：`sw.js` 快取名稱 `calendar-card-app-v3` → `v4`，部署後家人重新整理即取得新版號。
+- **部署包**：以 v1.3.0 重建 `dist/pages`，頁尾為 `v1.3.0 (Build 38)`。
+
+## 異動檔案 (Changed Files)
+`package.json`、`package-lock.json`、`index.html`、`sw.js`、`README.md`、`CHANGELOG.md`、`HANDOFF.md`。
+
+## 刻意未修改 (Do Not Do / Deliberately Omitted)
+- 未修改 JavaScript 邏輯、樣式、Firestore 規則或雲端資料；未部署 Firestore。
+- 未建立 Git 標記或 GitHub Release。
+- `package-lock.json` 原本停在 1.1.2，本輪一併對齊為 1.3.0。
+
+## 尚未完成 (Remaining Work)
+- **P1 (阻斷/必須)**：無。
+- **P2 (重要/當次)**：提交並推送本輪升版；再部署 v1.3.0 到 Hosting，否則正式站頁尾仍顯示 v1.2.0 (Build 37)。
+- **P3 (改善建議/暫緩)**：`dist/` 內已有 6 個 `pages-backup-*`／`pages-before-*` 舊部署包，確認不需要後可清理；`Calendar-Card-App-v1.1.2.zip` 找不到產生腳本。
+
+## 驗證結果 (Validation)
+### 已執行測試與結果
+- `npm test` 21/21 通過；`node --check sw.js`、`node --check js/app.js` 與 `scripts/qa.ps1` 通過。
+- v1.3.0 部署包：頁尾 `v1.3.0 (Build 38)`、`sw.js` 為 `calendar-card-app-v4`，其餘檔案與原始碼一致。
+- Q 版正式站：線上 21 檔 SHA-256 一致、瀏覽器載入無錯誤（2026-10-21 部署）。
+### 尚未驗證項目
+- v1.3.0 尚未部署，線上版號未驗證；手機 PWA 與跨裝置操作仍待家人實機驗收。
+### 已知風險 (Known Risks)
+- 家人裝置的舊 Service Worker 快取可能需要重新整理一兩次才會換成新版。
+
+## Git 狀態
+- Commit：未提交（基準 1949324）
+- Push：否
+- Working Tree：Modified
+- Branch：main
+
+## 下一步建議動作 (Next Recommended Action)
+提交 `chore: 升版至 v1.3.0 (Build 38)` 並推送，接著重新部署 Hosting，並逐檔比對線上 SHA-256。
+
+## 發布狀態 (Release Status)
+可發布（版號與部署包就緒，待提交與部署）
+
+---
+
+## 歷史交接快照（以下不是當前待辦或測試結果）
+
+### 2026-10-20 2D Q 版介面接手收尾（Claude）
 - 前一輪（其他 Agent，已結束）未提交的 Q 版改版，本輪已驗收並一併提交。範圍：`style.css` 與 `js/ui.js` 的選取日高亮條件。
 - 修正內容：
   - 色彩變數調整：`--game-blue` 改為 `#2563EB`、`--game-green` 改為 `#047857`、`--danger-color` 改為 `#DC2626`。
@@ -28,7 +84,8 @@
   - 沒有重建 `dist/`。
   - 沒有測試 Firebase 登入與家庭共用（核心邏輯未修改）。
 
-## 目前狀態
+### 2026-10-16 文件校正
+#### 目前狀態
 2026-10-16：家庭版與 main 已同步；GitHub Pages 已轉導 Firebase Hosting。README 的遷移前敘述已校正，於本輪提交並同步至家庭版與 main。
 
 ## 本輪目標
@@ -73,9 +130,7 @@ npm test：21／21 通過，全部 JavaScript 語法檢查通過；README 差異
 
 ---
 
-## 歷史交接快照（以下不是當前待辦或測試結果）
-
-# HANDOFF
+### 2026-10-14 v1.2.0 發布
 
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
