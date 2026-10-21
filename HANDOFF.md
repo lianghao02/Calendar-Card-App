@@ -1,5 +1,7 @@
 # HANDOFF
 
+> 2026-10-21 註：本檔下方提到的 `codex/firebase-family` 分支已完全合併至 `main` 並刪除，目前只使用 `main`。
+
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
 - **Branch**：codex/firebase-family

@@ -95,4 +95,4 @@ API 錯誤處理、日期解析／驗證與本機服務入口等修正見 [CHANG
 
 ### 本輪原始碼同步邊界
 
-新版已推送至 codex/firebase-family 與 main；GitHub Pages 保留原網址並轉導至 Firebase Hosting。舊 GAS 設定檔已移出新版追蹤，本機原檔保留；新環境可複製 google_api_config.example.js 為 google_api_config.js 再自行設定。Firebase 正式部署依 FIREBASE_SETUP.md 注入公開設定。切換後須停用 Git 歷史已曝光的舊 Token，本輪不改寫歷史。
+新版已合併至 main；GitHub Pages 保留原網址並轉導至 Firebase Hosting。舊 GAS 設定檔已移出新版追蹤，本機原檔保留；新環境可複製 google_api_config.example.js 為 google_api_config.js 再自行設定。Firebase 正式部署依 FIREBASE_SETUP.md 注入公開設定。切換後須停用 Git 歷史已曝光的舊 Token，本輪不改寫歷史。
