@@ -8,7 +8,7 @@
 
 以下原版說明保留作為遷移期間參考。
 
-# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.1.2
+# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.2.0
 
 ## 專案概念與開發原因
 
@@ -22,7 +22,7 @@
 
 本專案主力為 **HTML5／CSS／ES2020 JavaScript**；雲端同步為選用的 Google Apps Script，Python 只用於本機靜態伺服器。現階段維持免建置網站，若需安裝與離線能力優先導入 PWA，不進行語言遷移。
 
-[![Version](https://img.shields.io/badge/version-v1.1.2-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
 這是一套以卡片呈現月曆與活動的網頁應用程式，可在純前端本機模式使用，也可搭配 Google Apps Script 後端同步資料。
@@ -36,11 +36,12 @@
 - **打包／部署**：不需編譯；完整上傳 `index.html`、`css/`、`js/` 及必要設定檔至 GitHub Pages 或其他 HTTPS 靜態空間。
 - **開發檢查**：已安裝 Node.js 時可執行 `npm test`；`package.json` 沒有執行期套件。
 
-## v1.1.2 更新重點
+## v1.2.0 更新重點
 
-- 強化後端輸入、欄位與請求大小驗證。
-- 加入同步鎖定逾時及明確錯誤回復。
-- 修正前端日期計算、活動索引、智慧輸入及 API 錯誤處理。
+- 新增 Google 登入與核准家庭成員共用行程，加上 Firestore 存取規則與編輯版本衝突防護。
+- 提供完整備份與匯入預覽；修正月底跳月、換月明細不同步與自訂重複結束日期。
+- 手機版新增固定底部操作列與智慧輸入；舊 GitHub Pages 網址自動轉導至 Firebase 正式網址。
+- 完整變更見 [CHANGELOG](CHANGELOG.md)。
 
 ## 使用模式
 
