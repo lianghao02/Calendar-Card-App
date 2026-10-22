@@ -1,4 +1,6 @@
-const CACHE_NAME = 'calendar-card-app-v4';
+// CacheStorage 與同來源的其他網站共用，只清理本專案的舊版本。
+const CACHE_PREFIX = 'calendar-card-app-';
+const CACHE_NAME = 'calendar-card-app-v5';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -35,7 +37,7 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+                keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map((key) => caches.delete(key))
             );
         }).then(() => self.clients.claim())
     );

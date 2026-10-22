@@ -1,5 +1,10 @@
 # 📜 變更記錄 (CHANGELOG)
 
+## 🛠️ v1.3.1 (2026-10-22)
+
+- 修正 Service Worker 會刪除同來源其他專案快取的問題，只清理 calendar-card-app- 前綴舊版。
+- Build 39、快取 v5；22/22 測試與 JavaScript 語法檢查通過。僅發布 Hosting，不變更 Firestore 規則或資料。
+
 ## 🚀 v1.3.0 (Build 38)（2026-10-21）- 2D Q 版家庭行事曆
 
 ### 介面
