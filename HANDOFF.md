@@ -3,7 +3,7 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
 - **Branch**：main
-- **Commit SHA**：e6d7edb6a5093872745e38081317405274437ecf（本輪修改前基準；本輪尚未提交）
+- **Commit SHA**：e6d7edb6a5093872745e38081317405274437ecf（本輪修改前基準；本輪已提交，最新提交以 Git 記錄為準）
 - **Skill Version**：v1.0.0
 - **Task Type**：FIX
 - **Local Path Hint**：11_Calendar-Card-App
