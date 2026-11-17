@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeEventKeys } from '../js/utils.js';
 import { validDate, cleanEvent, normalizeEvents, flattenEvents, backupDocument, readBackup,
-    recurrenceDates, visibleRange, migrationEntries, assertRevision, moveCalendarDate } from '../js/calendar-data.js';
+    recurrenceDates, visibleRange, migrationEntries, assertRevision, moveCalendarDate, parseLocalDate } from '../js/calendar-data.js';
+import { getHolidayName } from '../js/config.js';
 const event = { title: '家庭聚餐', time: '18:00', location: '家裡', description: '帶餐具', link: 'https://example.org' };
 test('日期檢查含閏年與不存在的日期', () => {
     assert.equal(validDate('2028-02-29'), true);
@@ -68,4 +69,14 @@ test('月底導覽不跳月，保留有效日期且不修改來源', () => {
 test('週導覽維持七天並跨年度', () => {
     const date = moveCalendarDate(new Date(2026, 11, 28), 'week', 1);
     assert.equal(date.getFullYear(), 2027); assert.equal(date.getMonth(), 0); assert.equal(date.getDate(), 4);
+});
+test('parseLocalDate 以本地時區建立正午日期不跨日，且支援 2026 與 2027 假日查詢', () => {
+    const parsed = parseLocalDate('2026-11-17');
+    assert.equal(parsed.getFullYear(), 2026);
+    assert.equal(parsed.getMonth(), 10);
+    assert.equal(parsed.getDate(), 17);
+    assert.equal(parsed.getHours(), 12);
+    assert.equal(getHolidayName('2026-10-10'), '國慶日');
+    assert.equal(getHolidayName('2027-02-05'), '除夕');
+    assert.equal(getHolidayName('2027-04-06'), '兒童節補假');
 });

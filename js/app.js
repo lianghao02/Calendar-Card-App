@@ -8,29 +8,24 @@ import {
     renderCalendar, showLoading, hideLoading, updateHeaderDate, switchView, 
     toggleSelectionMode, selectDay, DOM 
 } from './ui.js';
-import { 
-    openAddModal, editEvent, closeModal, saveEvent, deleteEvent, 
-    updateRecurrenceInfo, openEventListModal, closeEventListModal, 
-    shareSchedule, shareSelectedDates, shareSpecificDay, openShareModal, closeShareModal 
+import {
+    openAddModal, editEvent, closeModal, saveEvent, deleteEvent,
+    updateRecurrenceInfo, shareSchedule, shareSelectedDates, shareSpecificDay, closeShareModal
 } from './logic.js';
 import { parseSmartInput } from './smart-input.js';
 
 // --- Expose Globals for HTML onclick attributes ---
 window.editEvent = editEvent;
 window.openAddModal = openAddModal;
-window.openEventListModal = openEventListModal;
-window.closeEventListModal = closeEventListModal;
 window.shareSpecificDay = shareSpecificDay;
-// Note: selectDay is used internally or via JS, not HTML string? 
-// Check ui.js createDayCard: dayCard.onclick calls selectDay(dateKey) directly if logic matches. 
-// Since ui.js imports selectDay (from itself), it's fine.
 
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
     setupFamilyControls();
-    setupDialogs({ 'event-modal': closeModal, 'share-modal-overlay': closeShareModal, 'event-list-modal-overlay': closeEventListModal });
+    setupDialogs({ 'event-modal': closeModal, 'share-modal-overlay': closeShareModal });
     initApp();
     window.addEventListener("calendar-view-change", refreshCalendarRange);
+    window.addEventListener("calendar-data-updated", renderCalendar);
     setupEventListeners();
     window.matchMedia('(max-width: 640px)').addEventListener('change', renderCalendar);
 });
@@ -88,6 +83,7 @@ function setupEventListeners() {
     DOM.viewWeekBtn().addEventListener('click', () => switchView('week'));
     DOM.viewMonthBtn().addEventListener('click', () => switchView('month'));
     DOM.selectModeBtn().addEventListener('click', toggleSelectionMode);
+    document.getElementById('mobile-select-mode-btn')?.addEventListener('click', toggleSelectionMode);
 
     // Smart Input
     const smartInput = document.getElementById('smart-input');
@@ -188,7 +184,11 @@ function setupEventListeners() {
     const delBtn = document.getElementById('delete-btn');
     if (delBtn) delBtn.addEventListener('click', deleteEvent);
 
-    // Recurrence
+    // Recurrence & Date Picker
+    const datePickerInput = document.getElementById('event-date-picker');
+    if (datePickerInput) {
+        datePickerInput.addEventListener('change', updateRecurrenceInfo);
+    }
     const recInput = document.getElementById('event-recurrence');
     if (recInput) {
         recInput.addEventListener('change', () => {
@@ -244,26 +244,6 @@ function setupEventListeners() {
             alert('複製失敗，請手動選取複製。');
         }
     });
-    
-    // Event List Modal
-    const closeListBtn = document.getElementById('close-event-list-modal');
-    if (closeListBtn) closeListBtn.addEventListener('click', closeEventListModal);
-    
-    const listOverlay = document.getElementById('event-list-modal-overlay');
-    if (listOverlay) {
-        listOverlay.addEventListener('click', (e) => {
-            if (e.target === listOverlay) closeEventListModal();
-        });
-    }
-    
-    const addFromListBtn = document.getElementById('add-from-list-btn');
-    if (addFromListBtn) {
-        addFromListBtn.addEventListener('click', () => {
-             const dateKey = listOverlay.dataset.dateKey;
-             closeEventListModal();
-             openAddModal(dateKey);
-        });
-    }
 }
 
 function processSmartInput(inputEl) {

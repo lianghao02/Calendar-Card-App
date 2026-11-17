@@ -1,13 +1,10 @@
 import { openDialog, closeDialog, confirmAction } from './dialogs.js';
 import { state } from "./state.js";
-import {
-  renderCalendar,
-  renderSelectedDayEvents,
-} from "./ui.js";
+import { renderCalendar } from "./ui.js";
 import { API } from "./api.js";
-import { formatDateKey, escapeHTML } from "./utils.js";
-import { cleanEvent, recurrenceDates } from './calendar-data.js';
-import { HOLIDAYS_2026 } from "./config.js";
+import { formatDateKey } from "./utils.js";
+import { cleanEvent, recurrenceDates, parseLocalDate } from './calendar-data.js';
+import { getHolidayName } from "./config.js";
 
 // DOM Cache for Modals (internal to logic)
 let initialForm = null;
@@ -30,12 +27,6 @@ const MODAL = {
   recurrenceEnd: () => document.getElementById("event-recurrence-end"),
   recurrenceGroup: () => document.getElementById("recurrence-end-date-group"),
   recurrenceInfo: () => document.getElementById("recurrence-info"),
-};
-
-const LIST_MODAL = {
-  overlay: () => document.getElementById("event-list-modal-overlay"),
-  title: () => document.getElementById("event-list-title"),
-  container: () => document.getElementById("event-list-container"),
 };
 
 const SHARE_MODAL = {
@@ -78,14 +69,14 @@ export function openAddModal(dateKey, preFill = null) {
   openDialog("event-modal");
 
   if (m.recurrence()) {
-    m.recurrence().value = "none";
+    m.recurrence().value = preFill?.recurrence || "none";
     m.recurrence().disabled = state.editingIndex >= 0;
   }
   if (m.recurrenceGroup()) m.recurrenceGroup().hidden = true;
   if (m.recurrenceEnd()) m.recurrenceEnd().value = "";
 
   updateRecurrenceInfo();
-  initialForm = preFill ? null : formSignature();
+  initialForm = formSignature();
   setTimeout(() => m.inputTitle().focus(), 100);
 }
 
@@ -129,7 +120,7 @@ export async function closeModal(options = {}) {
 export function updateRecurrenceInfo() {
   const m = MODAL;
   if (!m.recurrence() || !m.recurrenceInfo()) return;
-  const dateKey = m.inputDate().value;
+  const dateKey = m.inputDatePicker().value || m.inputDate().value;
   if (!dateKey) {
     m.recurrenceInfo().style.display = "none";
     return;
@@ -140,8 +131,7 @@ export function updateRecurrenceInfo() {
     m.recurrenceInfo().style.display = "none";
   } else {
     const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
-    const [y, m_val, d] = dateKey.split("-").map(Number);
-    const dateObj = new Date(y, m_val - 1, d);
+    const dateObj = parseLocalDate(dateKey);
     const dayName = dayNames[dateObj.getDay()];
 
     m.recurrenceInfo().textContent = `將於每週${dayName}重複此活動`;
@@ -177,8 +167,7 @@ async function performChanges(changes) {
     if (updated) state.events = updated;
     if (changes[0].after) {
       state.activeSplitDate = changes[0].after.date;
-      const [year, month, day] = state.activeSplitDate.split("-").map(Number);
-      state.currentDate = new Date(year, month - 1, day, 12);
+      state.currentDate = parseLocalDate(state.activeSplitDate);
       window.dispatchEvent(new Event("calendar-view-change"));
     }
     await closeModal({ force: true }); state.editingEvent = null; state.editingIndex = -1;
@@ -200,36 +189,6 @@ export async function deleteEvent() {
   catch (error) { formError('尚未刪除：' + error.message); }
 }
 
-// Event List Modal
-export function openEventListModal(dateKey) {
-  const lm = LIST_MODAL;
-  if (!lm.overlay()) return;
-
-  lm.overlay().dataset.dateKey = dateKey;
-
-  const dateObj = new Date(dateKey);
-  const m = dateObj.getMonth() + 1;
-  const d = dateObj.getDate();
-  const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
-  const w = dayNames[dateObj.getDay()];
-  lm.title().textContent = `${m}/${d} (${w}) 行程列表`;
-
-  const dayEvents = state.events[dateKey] || [];
-
-  lm.container().innerHTML = dayEvents.map((evt, index) =>
-    '<button type="button" class="event-item event-list-choice requires-edit" ' + (!state.canEdit ? 'disabled' : '') + ' onclick="closeEventListModal(); editEvent(\'' + dateKey + '\', ' + index + ');">' +
-    '<span class="event-time">' + escapeHTML(evt.time || '全日') + '</span><span class="event-title">' + escapeHTML(evt.title) + '</span>' +
-    (evt.location ? '<span class="event-detail">地點：' + escapeHTML(evt.location) + '</span>' : '') + '</button>'
-  ).join('');
-
-  openDialog("event-list-modal-overlay");
-}
-
-export function closeEventListModal() {
-  const lm = LIST_MODAL;
-  if (lm.overlay()) closeDialog("event-list-modal-overlay");
-}
-
 // Share Logic
 export function openShareModal(text) {
   SHARE_MODAL.preview().value = text;
@@ -245,11 +204,11 @@ export function shareSchedule(customStart = null, customEnd = null) {
   let titleStr = "";
 
   if (customStart && customEnd) {
-    startDate = new Date(customStart);
-    endDate = new Date(customEnd);
+    startDate = typeof customStart === "string" ? parseLocalDate(customStart) : new Date(customStart);
+    endDate = typeof customEnd === "string" ? parseLocalDate(customEnd) : new Date(customEnd);
     const m = startDate.getMonth() + 1;
     const d = startDate.getDate();
-    if (startDate.getTime() === endDate.getTime()) {
+    if (formatDateKey(startDate) === formatDateKey(endDate)) {
       titleStr = `📅 ${m}/${d} 行程`;
     } else {
       titleStr = `📅 ${m}/${d} - ... 行程`;
@@ -285,7 +244,7 @@ export function shareSchedule(customStart = null, customEnd = null) {
   while (iterDate.getTime() <= endTimestamp) {
     const dateKey = formatDateKey(iterDate);
     const dayEvents = state.events[dateKey] || [];
-    const holidayName = HOLIDAYS_2026[dateKey];
+    const holidayName = getHolidayName(dateKey);
 
     if (dayEvents.length > 0) {
       hasEvents = true;
@@ -327,12 +286,12 @@ export function shareSelectedDates() {
   let exportText = `📅 自選行程 (${datesArr.length}天)\n------------------\n`;
 
   datesArr.forEach((dateKey) => {
-    const dateObj = new Date(dateKey);
+    const dateObj = parseLocalDate(dateKey);
     const m = dateObj.getMonth() + 1;
     const d = dateObj.getDate();
     const dayNames = ["(日)", "(一)", "(二)", "(三)", "(四)", "(五)", "(六)"];
     const dayName = dayNames[dateObj.getDay()];
-    const holidayName = HOLIDAYS_2026[dateKey];
+    const holidayName = getHolidayName(dateKey);
 
     let dateLine = `${m}/${d} ${dayName}`;
     if (holidayName) dateLine += ` [${holidayName}]`;
@@ -357,6 +316,6 @@ export function shareSelectedDates() {
 }
 
 export function shareSpecificDay(dateKey) {
-  const targetDate = new Date(dateKey);
+  const targetDate = parseLocalDate(dateKey);
   shareSchedule(targetDate, targetDate);
 }

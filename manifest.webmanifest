@@ -1,7 +1,7 @@
 {
-  "name": "悠樂芳行事曆",
+  "name": "家庭行事曆",
   "short_name": "家庭行事曆",
-  "description": "雙週與月檢視家庭與個人排程卡片工具",
+  "description": "2D Q 版家庭與個人週月行事曆卡片工具",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait-primary",

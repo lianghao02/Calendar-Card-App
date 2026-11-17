@@ -303,10 +303,20 @@ h1 {
     box-shadow: var(--game-shadow-btn), 0 0 0 3px var(--game-gold);
 }
 
-.calendar-context {
+.calendar-context-row {
     grid-column: 3 / 4;
     grid-row: 2;
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.mobile-only-btn {
+    display: none;
+}
+
+.calendar-context {
     font-size: 0.8rem;
     font-weight: 800;
     color: var(--text-primary);
@@ -970,10 +980,6 @@ button:disabled {
 .form-feedback { padding: 0.65rem; border-radius: 8px; border: var(--game-outline-sm); background: var(--danger-bg); color: #9F1239; font-weight: 800; overflow-wrap: anywhere; }
 .event-author { font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); }
 .confirmation-message { margin-top: 0.75rem; font-weight: 600; color: var(--text-secondary); }
-.modal-event-list-overlay { z-index: 2000; }
-.modal-event-list-content { max-height: 80vh; display: flex; flex-direction: column; }
-.modal-event-list-body { overflow-y: auto; flex: 1; padding: 0.75rem 0; }
-.event-list-choice { width: 100%; flex-direction: column; align-items: flex-start; padding: 0.65rem; margin-bottom: 0.45rem; text-align: left; }
 
 /* Share Modal */
 .share-actions { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -1066,7 +1072,7 @@ button:focus-visible, summary:focus-visible, a:focus-visible, input:focus-visibl
     .smart-input-container {
         grid-column: 1 / 2;
     }
-    .calendar-context {
+    .calendar-context-row {
         grid-column: 2 / 3;
     }
     .view-week { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1093,8 +1099,17 @@ button:focus-visible, summary:focus-visible, a:focus-visible, input:focus-visibl
         width: 100%;
     }
 
-    .calendar-context {
-        align-self: flex-start;
+    .calendar-context-row {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .mobile-only-btn {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0.15rem 0.65rem;
+        font-size: 0.78rem;
     }
 
     .calendar-actions,

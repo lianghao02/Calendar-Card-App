@@ -81,19 +81,16 @@ export const API = {
             return ensureApiSuccess(data, 'API 讀取失敗');
         } catch (error) {
             console.error('API Fetch Error:', error);
-            // 🔒 當 API 發生 403 Token 錯誤時，自動降級切換至 LocalStorage 單機模式
+            // 當讀取遇到 403 Token 錯誤時，嘗試讀取 LocalStorage 供救援並明確標記原因
             if (error.message && error.message.includes('403')) {
-                console.warn('⚠️ 雲端 Token 驗證失敗 (403 Forbidden)，自動降級至 LocalStorage 單機模式。');
-                try {
-                    const fallbackEvents = parseLocalStorageEvents();
-                    return {
-                        status: 'success',
-                        data: { events: fallbackEvents },
-                        isFallback: true
-                    };
-                } catch (fallbackErr) {
-                    throw fallbackErr;
-                }
+                console.warn('⚠️ 雲端 Token 驗證失敗 (403 Forbidden)，改讀 LocalStorage 本機資料。');
+                const fallbackEvents = parseLocalStorageEvents();
+                return {
+                    status: 'success',
+                    data: { events: fallbackEvents },
+                    isFallback: true,
+                    fallbackReason: 'auth-403'
+                };
             }
             throw error;
         }
@@ -148,20 +145,9 @@ export const API = {
             return ensureApiSuccess(data, 'API 儲存失敗');
         } catch (error) {
             console.error('API Save Error:', error);
+            // 雲端寫入遇到 403 嚴禁假性成功或靜默寫入本機，必須保留表單讓使用者知悉並重試或匯出備份
             if (error.message && error.message.includes('403')) {
-                console.warn('⚠️ 雲端 Token 驗證失敗 (403)，自動改將行程儲存至 LocalStorage 本機快取。');
-                try {
-                    const allEvents = parseLocalStorageEvents();
-                    if (Array.isArray(events) && events.length > 0) {
-                        allEvents[dateKey] = events;
-                    } else {
-                        delete allEvents[dateKey];
-                    }
-                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
-                    return { status: 'success', isFallback: true };
-                } catch (fallbackErr) {
-                    throw new Error("本機儲存空間已滿或寫入失敗");
-                }
+                throw new Error('GAS 授權驗證失敗 (403)，尚未同步至雲端，請檢查設定或匯出本機備份');
             }
             throw error;
         }

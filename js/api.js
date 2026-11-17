@@ -16,7 +16,10 @@ export const API = {
         if (this.isCloud) return cloud.initializeCloud(onData, onStatus);
         const result = await this.fetchAllEvents();
         onData(result.data.events);
-        onStatus(result.isFallback ? '本機模式：僅存於此瀏覽器，請先匯出備份' : '舊版 GAS 模式：請先匯出備份');
+        const statusText = result.fallbackReason === 'auth-403'
+            ? 'GAS 授權失敗，改讀本機資料：請先匯出備份'
+            : (result.isFallback ? '本機模式：僅存於此瀏覽器，請先匯出備份' : '舊版 GAS 模式：請先匯出備份');
+        onStatus(statusText);
         return result;
     },
     watchRange(range) { if (this.isCloud) cloud.watchRange(range); },
@@ -49,7 +52,28 @@ export const API = {
         const result = await legacy.fetchAllEvents();
         return { events: normalizeEvents(normalizeEventKeys(result.data.events), { strictLink: false }), source: result.isFallback ? 'local' : 'gas' };
     },
-    importEntries: cloud.importEntries,
+    async importEntries(entries, progress) {
+        if (this.isCloud) return cloud.importEntries(entries, progress);
+        const result = await this.fetchAllEvents();
+        const rows = new Map(flattenEvents(result.data.events).map(event => [event.id, event]));
+        const changedDates = new Set();
+        let imported = 0, skipped = 0;
+        for (const entry of entries) {
+            if (rows.has(entry.id)) {
+                skipped++;
+            } else {
+                rows.set(entry.id, { ...cleanEvent(entry), date: entry.date, id: entry.id, revision: 1 });
+                changedDates.add(entry.date);
+                imported++;
+            }
+        }
+        const grouped = groupEvents([...rows.values()]);
+        for (const date of changedDates) {
+            await legacy.saveDayEvents(date, grouped[date] || []);
+        }
+        progress?.({ imported, skipped, processed: entries.length });
+        return { imported, skipped, events: grouped };
+    },
     signIn: cloud.signIn,
     signOut: cloud.signOut,
     currentAccount: cloud.currentAccount,

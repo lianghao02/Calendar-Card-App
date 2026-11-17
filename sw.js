@@ -1,6 +1,6 @@
 // CacheStorage 與同來源的其他網站共用，只清理本專案的舊版本。
 const CACHE_PREFIX = 'calendar-card-app-';
-const CACHE_NAME = 'calendar-card-app-v5';
+const CACHE_NAME = 'calendar-card-app-v6';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -9,7 +9,6 @@ const STATIC_ASSETS = [
     './icon-192.png',
     './icon-512.png',
     './firebase-config.js',
-    './google_api_config.js',
     './js/api.js',
     './js/app.js',
     './js/calendar-data.js',
@@ -24,11 +23,18 @@ const STATIC_ASSETS = [
     './js/ui.js',
     './js/utils.js'
 ];
+const OPTIONAL_ASSETS = ['./google_api_config.js'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
+        caches.open(CACHE_NAME).then(async (cache) => {
+            await cache.addAll(STATIC_ASSETS);
+            await Promise.allSettled(OPTIONAL_ASSETS.map(async (asset) => {
+                const response = await fetch(asset);
+                if (response && response.ok) {
+                    await cache.put(asset, response);
+                }
+            }));
         }).then(() => self.skipWaiting())
     );
 });

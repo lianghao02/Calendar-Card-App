@@ -25,7 +25,7 @@ export function setSyncStatus(message) {
         cancelConfirmation();
         prepared = null; closeDialog('import-modal');
         closeDialog('event-modal');
-        closeDialog('share-modal-overlay'); closeDialog('event-list-modal-overlay');
+        closeDialog('share-modal-overlay');
         el('share-text-preview').value = '';
         state.selectedDates.clear(); state.isSelectionMode = false;
         for (const input of document.querySelectorAll('#event-modal input, #event-modal textarea')) input.value = '';
@@ -37,12 +37,15 @@ export function setSyncStatus(message) {
     el('login-btn').disabled = API.isCloud && !API.loginReady;
     el('login-help').hidden = !API.isCloud || !!account;
     el('logout-btn').hidden = !account;
-    el('import-btn').hidden = !account?.allowed;
+    el('import-btn').hidden = API.isCloud && !account?.allowed;
+    el('import-btn').textContent = API.isCloud ? '匯入家庭行程' : '匯入備份行程';
     state.canEdit = !API.isCloud || account?.allowed === true;
     for (const control of document.querySelectorAll('.requires-edit, .add-event-btn, .event-edit-btn')) control.disabled = !state.canEdit || state.saving;
     el('backup-btn').disabled = API.isCloud && !account?.allowed;
-    el('share-btn').disabled = !state.canEdit || (state.isSelectionMode && !state.selectedDates.size);
+    el('share-btn').disabled = state.isSelectionMode && !state.selectedDates.size;
     el('select-mode-btn').disabled = !state.canEdit;
+    const mobileSelect = el('mobile-select-mode-btn');
+    if (mobileSelect) mobileSelect.disabled = !state.canEdit;
 }
 function download(events, source) {
     const content = JSON.stringify(backupDocument(events, source), null, 2);
@@ -79,6 +82,8 @@ export function setupFamilyControls() {
     el('legacy-backup-btn').addEventListener('click', () => operation(el('legacy-backup-btn'), async () => {
         const result = await API.readLegacyBackup(); download(result.events, result.source);
     }));
+    el('import-btn').hidden = API.isCloud;
+    el('import-btn').textContent = API.isCloud ? '匯入家庭行程' : '匯入備份行程';
     el('import-btn').addEventListener('click', () => { el('backup-file').value = ''; el('backup-file').click(); });
     el('backup-file').addEventListener('change', async event => {
         if (preparing || importing) return;
@@ -120,6 +125,10 @@ export function setupFamilyControls() {
             const result = await API.importEntries(prepared.entries, progress => {
                 el('import-summary').textContent = `已處理 ${progress.processed} 筆，新增 ${progress.imported} 筆，略過 ${progress.skipped} 筆。`;
             });
+            if (result.events) {
+                state.events = result.events;
+                window.dispatchEvent(new Event('calendar-data-updated'));
+            }
             prepared = null; closeDialog('import-modal');
             alert(`匯入完成：新增 ${result.imported} 筆，略過 ${result.skipped} 筆。原備份仍保留。`);
         } catch (error) {

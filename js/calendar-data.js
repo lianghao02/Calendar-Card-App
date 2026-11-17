@@ -7,6 +7,14 @@ export function validDate(value) {
     date.setFullYear(y, m - 1, d); date.setHours(12, 0, 0, 0);
     return y >= 1000 && date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
 }
+/**
+ * 以本地時區正午 12:00 解析 YYYY-MM-DD，避免 new Date('YYYY-MM-DD') 在負時區跨日錯位。
+ */
+export function parseLocalDate(value) {
+    if (!validDate(value)) throw new Error('日期無效');
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0, 0);
+}
 export function cleanEvent(input, { strictLink = true } = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('行程格式無效');
     const event = {};

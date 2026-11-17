@@ -41,3 +41,31 @@ test('本機原行程被別的分頁修改時阻止覆寫', async () => {
     await assert.rejects(API.commitChanges([{ id: before.id, before, after: { ...content, date: '2026-10-12' } }]));
     assert.equal(JSON.parse(storage.get(key))['2026-10-12'][0].title, '別人更新');
 });
+test('GAS 雲端寫入遇 403 時必須報錯，不得假性成功或偷寫入本機', async () => {
+    storage.set(key, JSON.stringify({}));
+    globalThis.window.GOOGLE_API_CONFIG = { apiUrl: 'https://example.invalid/gas', apiToken: 'secret-token' };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: false, status: 403 });
+    try {
+        await assert.rejects(
+            API.commitChanges([{ id: 'evt_1', before: null, after: { ...content, date: '2026-10-15' } }]),
+            /403/
+        );
+        assert.deepEqual(JSON.parse(storage.get(key)), {});
+    } finally {
+        globalThis.fetch = originalFetch;
+        delete globalThis.window.GOOGLE_API_CONFIG;
+    }
+});
+test('本機模式匯入備份可合併新行程並略過既有識別碼', async () => {
+    storage.set(key, JSON.stringify({ '2026-10-12': [{ ...content, id: 'keep_1', revision: 1 }] }));
+    const res = await API.importEntries([
+        { id: 'keep_1', date: '2026-10-12', ...content, title: '不可覆寫' },
+        { id: 'imp_1', date: '2026-10-13', ...content, title: '新匯入行程' },
+    ]);
+    assert.equal(res.imported, 1);
+    assert.equal(res.skipped, 1);
+    const saved = (await API.fetchAllEvents()).data.events;
+    assert.equal(saved['2026-10-12'][0].title, '舊行程');
+    assert.equal(saved['2026-10-13'][0].title, '新匯入行程');
+});

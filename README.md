@@ -1,26 +1,22 @@
-# 家庭共用 Firebase 改版進度
+# 家庭共用 Firebase 改版現況
 
-已加入 Google 登入、核准家庭成員共用、逐筆行程版本防護、JSON 完整備份與匯入預覽。原始碼的 Firebase 預設關閉；獨立專案 calendar-family-lianghao02 已建立，Firestore Standard 位於台灣 asia-east1，Google 登入與正式規則已發布。已部署七天手機測試版並核准首位家庭成員。原 GAS 的 58 筆行程已備份、匯入 Firebase 並逐筆讀回核對；原 GitHub Pages 已轉導至 Firebase Hosting。既有本機／GAS 模式供遷移期間使用。
+已加入 Google 登入、核准家庭成員共用、逐筆行程版本防護、JSON 完整備份與匯入預覽。原始碼的 Firebase 預設關閉；獨立專案 calendar-family-lianghao02 已建立，Firestore Standard 位於台灣 asia-east1，Google 登入與正式規則已發布，原 GAS 的 58 筆行程已備份、匯入 Firebase 並逐筆讀回核對，原 GitHub Pages 已轉導至 Firebase Hosting。既有本機／GAS 模式供遷移期間使用，且本機模式亦支援備份匯入與本機資料檢查。
 
-設定與驗收見 [FIREBASE_SETUP.md](FIREBASE_SETUP.md)，工作清單見 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。npm test 現在包含資料測試與語法檢查；家庭權限另以 Firestore Emulator 測試，不等於正式登入與手機實測。
+設定與驗收見 [FIREBASE_SETUP.md](FIREBASE_SETUP.md)，工作清單見 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。`npm test` 包含語法檢查、資料與時區邏輯、智慧輸入、對話框、Service Worker 與部署包測試；家庭權限另以 Firestore Emulator 測試（`npm run test:rules`），不等於正式登入與真實手機端到端實測。
 
-手機商品品質修訂已更新測試頻道：修正換月／月底日期、週月明細、自訂重複欄位，整理帳號與資料選單、主要新增入口、觸控按鈕及原生對話框。21 項自動測試通過；最終手機確認操作、雲端 CRUD 與跨裝置驗收仍待完成。
-
-以下原版說明保留作為遷移期間參考。
-
-# 莫蘭迪卡片式行事曆 Calendar-Card-App v1.3.1
+# 家庭行事曆 Calendar-Card-App v1.3.1
 
 ## 專案概念與開發原因
 
-月曆卡片把活動以月份及卡片方式呈現，提供本機使用與選用 Google Apps Script 同步。開發動機是日常排程需要快速新增、閱讀與調整，並清楚知道資料是在本機還是已送到雲端。
+月曆卡片把活動以月份及卡片方式呈現，提供家庭雲端共用（Firebase）、本機儲存與選用 Google Apps Script 同步。開發動機是日常排程需要快速新增、閱讀與調整，並清楚知道資料是在本機還是已送到雲端。
 
-採 ES modules 的輕量前端架構，規則式智慧輸入協助整理文字與日期。它保留人工確認，避免把輸入解析或同步訊息當成已完成的行程。
+採 ES modules 的輕量原生前端架構，規則式智慧輸入協助整理文字、日期與每週重複設定。它保留人工確認，避免把輸入解析或同步訊息當成已完成的行程。
 
-**典型流程**：開啟本機服務 → 新增／編輯卡片 → 確認日期 → 保存於本機或設定雲端同步。
+**典型流程**：開啟服務 → 新增／編輯卡片（或智慧輸入預覽）→ 確認日期 → 保存於本機或雲端同步。
 
-## 技術架構現況（2026-08-24）
+## 技術架構現況
 
-本專案主力為 **HTML5／CSS／ES2020 JavaScript**；雲端同步為選用的 Google Apps Script，Python 只用於本機靜態伺服器。現階段維持免建置網站，若需安裝與離線能力優先導入 PWA，不進行語言遷移。
+本專案主力為 **HTML5／CSS／ES2020 JavaScript（2D Q 版卡片風格）**；雲端共用採 Firebase Authentication／Firestore，舊版 Google Apps Script 為遷移期間選用後端，Python 只用於本機靜態伺服器。現階段維持免建置網站與標準 PWA 離線快取，不引入大型前端框架。
 
 [![Version](https://img.shields.io/badge/version-v1.3.1-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
@@ -33,7 +29,7 @@
 - **執行依賴**：現代瀏覽器；Google Fonts 由 CDN 載入。本機月曆功能不需要 npm 套件，Python 只用來啟動簡易靜態伺服器。
 - **本機資料**：活動保存在瀏覽器儲存空間；`google_api_config.js` 只放公開部署 URL，不可放密碼、Token 或其他機密。
 - **雲端同步**：選用 Google Apps Script 時，另部署 `apps-script/backend_code.js`，再從 `google_api_config.example.js` 建立本機設定檔。
-- **打包／部署**：不需編譯；完整上傳 `index.html`、`css/`、`js/` 及必要設定檔至 GitHub Pages 或其他 HTTPS 靜態空間。
+- **打包／部署**：不需編譯；完整上傳 `index.html`、`style.css`、`manifest.webmanifest`、`sw.js`、`js/`、`icon-*.png` 及必要設定檔至靜態空間，或透過 `node scripts/prepare-pages.mjs` 準備含 Firebase 公開設定的 `dist/pages` 部署包。
 - **開發檢查**：已安裝 Node.js 時可執行 `npm test`；`package.json` 沒有執行期套件。
 
 ## v1.3.1 更新重點
@@ -64,15 +60,11 @@
 
 ## 開發與驗證
 
-本專案不需要前端建置步驟。可用 Node.js 檢查 JavaScript 語法：
+本專案不需要前端建置步驟。可用以下指令執行完整語法檢查、單元測試與 QA：
 
 ```powershell
-node --check apps-script/backend_code.js
-node --check js/api.js
-node --check js/app.js
-node --check js/logic.js
-node --check js/smart-input.js
-node --check js/ui.js
+npm test
+powershell -ExecutionPolicy Bypass -File scripts\qa.ps1
 ```
 
 ## 限制

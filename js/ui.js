@@ -1,6 +1,7 @@
 import { refreshSyncSummary } from './family-controls.js';
 import { state } from './state.js';
-import { HOLIDAYS_2026 } from './config.js';
+import { getHolidayName } from './config.js';
+import { parseLocalDate } from './calendar-data.js';
 import { formatDateKey, escapeHTML, sanitizeLink } from './utils.js';
 // Note: Circular reference avoidance. Functions like openAddModal/editEvent are globally attached in app.js, 
 // so we can use them in HTML strings, or call them if we assume they are on window.
@@ -63,7 +64,14 @@ export function updateMobileBottomBar() {
     }
     const mobileShareBtn = document.getElementById('mobile-share-btn');
     if (mobileShareBtn) {
-        mobileShareBtn.disabled = !state.canEdit || (state.isSelectionMode && !state.selectedDates.size);
+        mobileShareBtn.disabled = state.isSelectionMode && !state.selectedDates.size;
+    }
+    const mobileSelectBtn = document.getElementById('mobile-select-mode-btn');
+    if (mobileSelectBtn) {
+        mobileSelectBtn.disabled = !state.canEdit;
+        mobileSelectBtn.setAttribute('aria-pressed', String(state.isSelectionMode));
+        mobileSelectBtn.classList.toggle('active', state.isSelectionMode);
+        mobileSelectBtn.textContent = state.isSelectionMode ? '完成選取' : '選日期';
     }
 }
 
@@ -100,7 +108,7 @@ export function renderCalendar() {
     DOM.selectModeBtn().setAttribute('aria-pressed', String(state.isSelectionMode));
     document.getElementById('selected-date-label').textContent = state.isSelectionMode ? '已選 ' + state.selectedDates.size + ' 天，選好後按分享' : '新增日期：' + state.activeSplitDate.replaceAll('-', '/');
     document.getElementById('add-event-btn').disabled = !state.canEdit || state.saving || state.isSelectionMode;
-    document.getElementById('share-btn').disabled = !state.canEdit || (state.isSelectionMode && !state.selectedDates.size);
+    document.getElementById('share-btn').disabled = state.isSelectionMode && !state.selectedDates.size;
     document.getElementById('select-mode-btn').disabled = !state.canEdit;
     refreshSyncSummary();
     updateMobileBottomBar();
@@ -175,18 +183,15 @@ function createDayCard(container, date, isOtherMonth) {
     const dateKey = formatDateKey(date);
     const dayCard = document.createElement('div');
     dayCard.classList.add('day-card');
+    dayCard.dataset.date = dateKey;
     if (isOtherMonth) dayCard.classList.add('other-month');
     if (dateKey === formatDateKey(new Date())) dayCard.classList.add('current-day');
     
-    if (state.isSelectionMode) {
-        if (state.selectedDates.has(dateKey)) {
-            dayCard.classList.add('selected-day');
-            dayCard.style.border = '2px solid var(--primary-color)';
-            dayCard.style.backgroundColor = 'var(--primary-bg)';
-        }
+    if (state.isSelectionMode && state.selectedDates.has(dateKey)) {
+        dayCard.classList.add('selected-day');
     }
 
-    const holidayName = HOLIDAYS_2026[dateKey];
+    const holidayName = getHolidayName(dateKey);
     const holidayLabel = holidayName ? `<div class="holiday-label">${holidayName}</div>` : '';
     const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
     const dayOfWeek = date.getDay();
@@ -274,7 +279,28 @@ function createDayCard(container, date, isOtherMonth) {
 
 export function selectDay(dateKey) {
     state.activeSplitDate = dateKey;
-    renderCalendar();
+    const grid = DOM.calendarGrid();
+    const targetCard = grid?.querySelector(`.day-card[data-date="${dateKey}"]`);
+    if (!targetCard) {
+        renderCalendar();
+        document.getElementById('day-' + dateKey)?.focus({ preventScroll: true });
+        return;
+    }
+
+    for (const card of grid.querySelectorAll('.day-card.selected-day')) {
+        card.classList.remove('selected-day');
+        card.querySelector('.date-select-btn')?.setAttribute('aria-pressed', 'false');
+    }
+    targetCard.classList.add('selected-day');
+    targetCard.querySelector('.date-select-btn')?.setAttribute('aria-pressed', 'true');
+
+    const label = document.getElementById('selected-date-label');
+    if (label && !state.isSelectionMode) {
+        label.textContent = '新增日期：' + dateKey.replaceAll('-', '/');
+    }
+    if (state.currentView === 'month' && window.innerWidth <= 640 && !state.isSelectionMode) {
+        renderSelectedDayEvents(dateKey);
+    }
     document.getElementById('day-' + dateKey)?.focus({ preventScroll: true });
 }
 
@@ -284,8 +310,7 @@ export function renderSelectedDayEvents(dateKey) {
     
     if (!container) return;
     
-    const [y, m_val, d_val] = dateKey.split('-').map(Number);
-    const dateObj = new Date(y, m_val - 1, d_val);
+    const dateObj = parseLocalDate(dateKey);
     const m = dateObj.getMonth() + 1;
     const d = dateObj.getDate();
     const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
@@ -318,14 +343,7 @@ export function toggleSelectionMode() {
     if (!state.canEdit) return;
     state.isSelectionMode = !state.isSelectionMode;
     const btn = DOM.selectModeBtn();
-    if (state.isSelectionMode) {
-        btn.classList.add('active');
-        btn.style.backgroundColor = 'var(--primary-bg)';
-        state.selectedDates.clear();
-    } else {
-        btn.classList.remove('active');
-        btn.style.backgroundColor = '';
-        state.selectedDates.clear();
-    }
+    btn.classList.toggle('active', state.isSelectionMode);
+    state.selectedDates.clear();
     renderCalendar();
 }

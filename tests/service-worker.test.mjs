@@ -33,3 +33,35 @@ test('啟用只移除本專案舊快取，保留其他專案與目前版本', as
     assert.deepEqual(deleted.sort(), keys.filter(key => key.startsWith(prefix) && key !== current).sort());
     assert.equal(claimed, true);
 });
+
+test('安裝時即使缺少 google_api_config.js (404) 也能順利完成快取與安裝', async () => {
+    const handlers = {};
+    const added = [];
+    const putKeys = [];
+    let skipped = false;
+    const context = vm.createContext({
+        URL,
+        fetch: async (url) => ({ ok: false, status: 404, url }),
+        self: {
+            addEventListener: (name, handler) => { handlers[name] = handler; },
+            skipWaiting: async () => { skipped = true; },
+            clients: { claim: async () => {} },
+        },
+        caches: {
+            open: async () => ({
+                addAll: async (assets) => {
+                    if (assets.includes('./google_api_config.js')) throw new Error('不應將選用檔列入必備清單');
+                    added.push(...assets);
+                },
+                put: async (key) => { putKeys.push(key); },
+            }),
+        },
+    });
+    vm.runInContext(source, context);
+    let completion;
+    handlers.install({ waitUntil: promise => { completion = promise; } });
+    await completion;
+    assert.ok(added.includes('./index.html'));
+    assert.equal(putKeys.length, 0);
+    assert.equal(skipped, true);
+});

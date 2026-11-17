@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>悠樂芳行事曆 | Young Living Calendar</title>
+    <title>家庭行事曆 | Calendar Card App</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
@@ -25,7 +25,7 @@
 <body>
     <header>
         <div class="header-top">
-            <h1><span class="icon" aria-hidden="true">📅</span><span id="current-month-year">2026 年 1 月</span></h1>
+            <h1><span class="icon" aria-hidden="true">📅</span><span id="current-month-year">載入中…</span></h1>
             <div class="nav-controls" aria-label="日期導覽">
                 <button type="button" class="btn-icon" id="prev-btn" aria-label="上一個月或上一週">‹</button>
                 <button type="button" class="btn-cancel" id="today-btn">今天</button>
@@ -41,7 +41,10 @@
             <button type="button" class="btn-cancel" id="select-mode-btn" aria-pressed="false">選日期</button>
             <button type="button" class="btn-cancel" id="share-btn">分享</button>
         </div>
-        <p id="selected-date-label" class="calendar-context"></p>
+        <div class="calendar-context-row">
+            <p id="selected-date-label" class="calendar-context"></p>
+            <button type="button" class="btn-cancel mobile-only-btn" id="mobile-select-mode-btn" aria-pressed="false">選日期</button>
+        </div>
         <div class="sync-toolbar" aria-label="帳號與資料備份">
             <div class="sync-line">
                 <p id="sync-status" role="status" aria-live="polite">讀取行事曆中…</p>
@@ -94,7 +97,7 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label" for="event-input">活動標題 (Title)</label>
-                    <input type="text" maxlength="200" class="input-field" id="event-input" placeholder="輸入標題 (例如：週二夜來香)...">
+                    <input type="text" maxlength="200" class="input-field" id="event-input" placeholder="輸入標題 (例如：家庭聚餐)...">
                 </div>
                 <div class="input-group">
                     <label class="input-label" for="event-time">時間 (Time)</label>
@@ -137,22 +140,6 @@
                 <button class="btn-delete" id="delete-btn">刪除</button>
                 <button class="btn-cancel" id="cancel-btn">取消</button>
                 <button class="btn-primary" id="save-btn">儲存</button>
-            </div>
-        </div>
-    </dialog>
-
-    <!-- Event Selection Modal (Mobile > 1 event) -->
-    <dialog class="modal-overlay modal-event-list-overlay" id="event-list-modal-overlay" aria-labelledby="event-list-title">
-        <div class="modal modal-event-list-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="event-list-title">選擇行程</h3>
-                <button class="btn-icon" id="close-event-list-modal" aria-label="關閉行程列表">✕</button>
-            </div>
-            <div class="modal-body modal-event-list-body" id="event-list-container">
-                <!-- List injected here -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn-primary u-w-full" id="add-from-list-btn">+ 新增此日行程</button>
             </div>
         </div>
     </dialog>
@@ -223,7 +210,7 @@
                 <label for="mobile-smart-input" class="sr-only">請輸入時間與事項（自然語言解析）：</label>
                 <textarea id="mobile-smart-input" class="smart-input u-w-full" rows="3" placeholder="例如：明天 18:00 家庭聚餐、每週五 14:00 會議、3/25 買菜"></textarea>
                 <p class="input-help-text" style="display:block;margin-top:0.5rem;color:var(--text-secondary);">
-                    支援「明天/後天/下週幾」、「HH:MM」時間、重複週期或指定地點。
+                    支援「明天/後天/下週幾/每週幾」、「HH:MM」或中文時間、地點「地點：XX」或「在XX」。
                 </p>
             </div>
             <div class="modal-footer">
@@ -263,7 +250,7 @@
         </div>
     </nav>
 
-    <footer class="site-footer">© 2025-2026 Young Living Calendar・v1.3.1 (Build 39)・Chia-Hao</footer>
+    <footer class="site-footer">© 2025-2026 Calendar Card App・v1.3.1 (Build 39)・Chia-Hao</footer>
 
     <script src="google_api_config.js"></script>
     <script src="firebase-config.js"></script>

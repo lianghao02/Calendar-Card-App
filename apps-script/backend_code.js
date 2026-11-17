@@ -70,6 +70,14 @@ function verifyToken(e) {
   return incomingToken === configuredToken;
 }
 
+function normalizeSheetDateKey(cellValue) {
+  if (cellValue instanceof Date && !isNaN(cellValue.getTime())) {
+    const tz = Session.getScriptTimeZone() || 'Asia/Taipei';
+    return Utilities.formatDate(cellValue, tz, 'yyyy-MM-dd');
+  }
+  return String(cellValue || '').trim();
+}
+
 function validateDateKey(dateKey) {
   if (typeof dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
     throw new Error('Invalid dateKey');
@@ -151,7 +159,7 @@ function handleRequest(e, method) {
       // 欄位結構 [Col A: DateKey, Col B: EventsJsonString]
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
-        const dateKey = row[0];
+        const dateKey = normalizeSheetDateKey(row[0]);
         const jsonStr = row[1];
         if (dateKey && jsonStr) {
           try {
@@ -224,7 +232,7 @@ function saveDayEvents(sheet, dateKey, eventsArray) {
   
   // 搜尋該日期是否已存在 (Skip header)
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] == dateKey) {
+    if (normalizeSheetDateKey(data[i][0]) === dateKey) {
       rowIndex = i + 1; // 1-based index
       break;
     }
@@ -241,9 +249,9 @@ function saveDayEvents(sheet, dateKey, eventsArray) {
          sheet.getRange(rowIndex, 2).setValue(jsonStr);
     }
   } else {
-    // 新增 (如果不為空)
+    // 新增 (如果不為空)，以純文字格式寫入避免試算表自動轉成 Date 物件
     if (eventsArray.length > 0) {
-        sheet.appendRow([dateKey, jsonStr]);
+        sheet.appendRow(["'" + dateKey, jsonStr]);
     }
   }
 }
@@ -268,7 +276,8 @@ function getSheet() {
  */
 function checkQuota() {
   const props = PropertiesService.getScriptProperties();
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const tz = Session.getScriptTimeZone() || 'Asia/Taipei';
+  const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   
   let savedDate = props.getProperty('QUOTA_DATE');
   let currentCount = parseInt(props.getProperty('QUOTA_COUNT') || '0');
