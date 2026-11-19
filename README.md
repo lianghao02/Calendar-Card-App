@@ -4,7 +4,7 @@
 
 設定與驗收見 [FIREBASE_SETUP.md](FIREBASE_SETUP.md)，工作清單見 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。`npm test` 包含語法檢查、資料與時區邏輯、智慧輸入、對話框、Service Worker 與部署包測試；家庭權限另以 Firestore Emulator 測試（`npm run test:rules`），不等於正式登入與真實手機端到端實測。
 
-# 家庭行事曆 Calendar-Card-App v1.3.1
+# 家庭行事曆 Calendar-Card-App v1.3.2
 
 ## 專案概念與開發原因
 
@@ -18,7 +18,7 @@
 
 本專案主力為 **HTML5／CSS／ES2020 JavaScript（2D Q 版卡片風格）**；雲端共用採 Firebase Authentication／Firestore，舊版 Google Apps Script 為遷移期間選用後端，Python 只用於本機靜態伺服器。現階段維持免建置網站與標準 PWA 離線快取，不引入大型前端框架。
 
-[![Version](https://img.shields.io/badge/version-v1.3.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.3.2-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
 這是一套以卡片呈現月曆與活動的網頁應用程式，可在純前端本機模式使用，也可搭配 Google Apps Script 後端同步資料。
