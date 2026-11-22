@@ -32,6 +32,11 @@
 - **打包／部署**：不需編譯；完整上傳 `index.html`、`style.css`、`manifest.webmanifest`、`sw.js`、`js/`、`icon-*.png` 及必要設定檔至靜態空間，或透過 `node scripts/prepare-pages.mjs` 準備含 Firebase 公開設定的 `dist/pages` 部署包。
 - **開發檢查**：已安裝 Node.js 時可執行 `npm test`；`package.json` 沒有執行期套件。
 
+## v1.3.2 與近期調整重點
+
+- **v1.3.2（2026-11-19）**：修復離線快取、時區解析、智慧輸入與雙擊互動問題，補齊 MIT 授權並整理部署產物。
+- **2026-11-22 視覺對齊（未另升版）**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`#2563EB`／`#FAF5E8`）。
+
 ## v1.3.1 更新重點
 
 - 介面改為 2D Q 版：奶油圓點底、粗墨框日期卡、厚底按鈕與金色今日外框，週／月檢視、對話框與手機底部導覽同步套用。

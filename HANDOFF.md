@@ -3,12 +3,14 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
 - **Branch**：main
-- **Commit SHA**：e6d7edb6a5093872745e38081317405274437ecf（本輪修改前基準；本輪已提交，最新提交以 Git 記錄為準）
+- **Commit SHA**：`046f372`（已發布 `v1.3.2` 並含 `2026-11-22` 暖紙手帳 Design Tokens 對齊；前輪 `v1.3.1` 基準 `e6d7edb`）
 - **Skill Version**：v1.0.0
-- **Task Type**：FIX
+- **Task Type**：FIX / DESIGN
 - **Local Path Hint**：11_Calendar-Card-App
 
 ---
+
+2026-11-22 同步：`v1.3.2`（`655b23a`，離線快取與互動修補）及 `2026-11-22` 暖紙手帳 Design Tokens／PWA 主題色對齊（`046f372`）均已提交至 `main`；真實手機端已安裝 PWA 的離線更新驗收仍待實機補齊。以下保留 `v1.3.1` 詳細修訂紀錄。
 
 P26-10-22：使用者已授權提交與發布。此提交包含本輪已驗證的修正及 v1.3.1 版本更新。Tag、Release、部署與最終同步結果統一見控制中心 `docs/audit-release-20261022.md`，不得依提交前記錄重做修復。
 

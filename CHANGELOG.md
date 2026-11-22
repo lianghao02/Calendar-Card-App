@@ -1,5 +1,9 @@
 # 📜 變更記錄 (CHANGELOG)
 
+## 🧪 未發布（2026-11-22）
+
+- **視覺規範對齊**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`theme-color` `#2563EB`、`background_color` `#FAF5E8`、`style.css` 樣式同步）。
+
 ## 🛠️ v1.3.2 (2026-11-19)
 
 - 修復離線快取、時區解析、智慧輸入與雙擊互動等健檢問題。
