@@ -1,10 +1,10 @@
-# 家庭共用 Firebase 改版現況
+# 家庭行事曆 Calendar-Card-App v1.3.2
+
+## 家庭共用 Firebase 改版現況
 
 已加入 Google 登入、核准家庭成員共用、逐筆行程版本防護、JSON 完整備份與匯入預覽。原始碼的 Firebase 預設關閉；獨立專案 calendar-family-lianghao02 已建立，Firestore Standard 位於台灣 asia-east1，Google 登入與正式規則已發布，原 GAS 的 58 筆行程已備份、匯入 Firebase 並逐筆讀回核對，原 GitHub Pages 已轉導至 Firebase Hosting。既有本機／GAS 模式供遷移期間使用，且本機模式亦支援備份匯入與本機資料檢查。
 
 設定與驗收見 [FIREBASE_SETUP.md](FIREBASE_SETUP.md)，工作清單見 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。`npm test` 包含語法檢查、資料與時區邏輯、智慧輸入、對話框、Service Worker 與部署包測試；家庭權限另以 Firestore Emulator 測試（`npm run test:rules`），不等於正式登入與真實手機端到端實測。
-
-# 家庭行事曆 Calendar-Card-App v1.3.2
 
 ## 專案概念與開發原因
 
