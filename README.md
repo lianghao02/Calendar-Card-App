@@ -1,4 +1,4 @@
-# 家庭行事曆 Calendar-Card-App v1.3.2
+# 家庭行事曆 Calendar-Card-App v1.3.3
 
 ## 家庭共用 Firebase 改版現況
 
@@ -18,7 +18,7 @@
 
 本專案主力為 **HTML5／CSS／ES2020 JavaScript（2D Q 版卡片風格）**；雲端共用採 Firebase Authentication／Firestore，舊版 Google Apps Script 為遷移期間選用後端，Python 只用於本機靜態伺服器。現階段維持免建置網站與標準 PWA 離線快取，不引入大型前端框架。
 
-[![Version](https://img.shields.io/badge/version-v1.3.2-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.3.3-blue.svg)](CHANGELOG.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-yellow.svg)](js/app.js)
 
 這是一套以卡片呈現月曆與活動的網頁應用程式，可在純前端本機模式使用，也可搭配 Google Apps Script 後端同步資料。
@@ -32,10 +32,10 @@
 - **打包／部署**：不需編譯；完整上傳 `index.html`、`style.css`、`manifest.webmanifest`、`sw.js`、`js/`、`icon-*.png` 及必要設定檔至靜態空間，或透過 `node scripts/prepare-pages.mjs` 準備含 Firebase 公開設定的 `dist/pages` 部署包。
 - **開發檢查**：已安裝 Node.js 時可執行 `npm test`；`package.json` 沒有執行期套件。
 
-## v1.3.2 與近期調整重點
+## v1.3.3 與近期調整重點
 
+- **v1.3.3（2026-11-25）**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`#2563EB`／`#FAF5E8`），並同步更新 Service Worker 快取（`calendar-card-app-v7`）與 Build 41。
 - **v1.3.2（2026-11-19）**：修復離線快取、時區解析、智慧輸入與雙擊互動問題，補齊 MIT 授權並整理部署產物。
-- **2026-11-22 視覺對齊（未另升版）**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`#2563EB`／`#FAF5E8`）。
 
 ## v1.3.1 更新重點
 

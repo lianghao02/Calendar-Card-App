@@ -3,9 +3,9 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/Calendar-Card-App
 - **Branch**：main
-- **Commit SHA**：`046f372`（已發布 `v1.3.2` 並含 `2026-11-22` 暖紙手帳 Design Tokens 對齊；前輪 `v1.3.1` 基準 `e6d7edb`）
+- **Commit SHA**：`072493a` 之後之 `v1.3.3` 發布提交（已發布 `v1.3.3`；前輪 `v1.3.2`／`v1.3.1` 基準 `e6d7edb`）
 - **Skill Version**：v1.0.0
-- **Task Type**：FIX / DESIGN
+- **Task Type**：RELEASE
 - **Local Path Hint**：11_Calendar-Card-App
 
 ---

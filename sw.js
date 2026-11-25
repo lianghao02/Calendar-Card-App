@@ -1,6 +1,6 @@
 // CacheStorage 與同來源的其他網站共用，只清理本專案的舊版本。
 const CACHE_PREFIX = 'calendar-card-app-';
-const CACHE_NAME = 'calendar-card-app-v6';
+const CACHE_NAME = 'calendar-card-app-v7';
 const STATIC_ASSETS = [
     './',
     './index.html',

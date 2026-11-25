@@ -1,8 +1,8 @@
 # 📜 變更記錄 (CHANGELOG)
 
-## 🧪 未發布（2026-11-22）
+## 🛠️ v1.3.3 (2026-11-25)
 
-- **視覺規範對齊**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`theme-color` `#2563EB`、`background_color` `#FAF5E8`、`style.css` 樣式同步）。
+- **視覺規範對齊與快取更新**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`theme-color` `#2563EB`、`background_color` `#FAF5E8`、`style.css` 樣式同步），並更新至 Build 41 與 Service Worker 快取 `calendar-card-app-v7`。
 
 ## 🛠️ v1.3.2 (2026-11-19)
 
